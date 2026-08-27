@@ -1,6 +1,6 @@
 /**
- * Configuración oficial y real de The Corner (Drinks & Entertainment)
- * C.C. Costa Verde, Local PA-35-36, Planta Alta, Maracaibo
+ * Configuración oficial de The Corner (Drinks & Entertainment)
+ * Maracaibo, Venezuela
  */
 export const SITE_CONFIG = {
   name: "The Corner",
@@ -8,15 +8,15 @@ export const SITE_CONFIG = {
   handle: "@cornermcbo",
   tagline: "Drinks, Narguiles, Beerpong, Videojuegos, Karaoke & Celebraciones",
   description:
-    "El punto de entretenimiento más activo de Maracaibo en C.C. Costa Verde (Planta Alta). Narguiles, baldes de cerveza, beerpong, Mario Kart, karaoke, juegos de mesa y paquetes de cumpleaños.",
+    "El punto de encuentro y entretenimiento de Maracaibo. Narguiles, baldes de cerveza, beerpong, Mario Kart en pantalla gigante, karaoke, juegos de mesa y paquetes de cumpleaños.",
   phone: "+58 412-0308674",
   phoneFormatted: "+58 412 0308674",
   whatsappNumber: "584120308674",
   instagramUrl: "https://www.instagram.com/cornermcbo/",
-  address: "C.C. Costa Verde, Local PA-35-36, Planta Alta, Av. Bella Vista, Maracaibo, Zulia",
-  shortAddress: "C.C. Costa Verde (Planta Alta, Local PA-35-36)",
-  mapsUrl: "https://maps.google.com/?q=CC+Costa+Verde+Maracaibo",
-  wazeUrl: "https://waze.com/ul?q=CC+Costa+Verde+Maracaibo",
+  address: "Av. Bella Vista, Maracaibo, Zulia, Venezuela",
+  shortAddress: "Maracaibo, Zulia",
+  mapsUrl: "https://maps.google.com/?q=The+Corner+Maracaibo",
+  wazeUrl: "https://waze.com/ul?q=The+Corner+Maracaibo",
   hours: "Miércoles a Domingos: 6:00 PM - 03:00 AM",
-  defaultBcvRate: 70.5,
+  defaultBcvRate: 76.8,
 };

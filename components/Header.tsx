@@ -71,7 +71,7 @@ export function Header({
         </div>
 
         <div className="flex items-center gap-2 text-zinc-400">
-          <span>📍 C.C. Costa Verde (Planta Alta)</span>
+          <span>📍 Maracaibo</span>
           <span>·</span>
           <span>Mié a Dom: 6:00 PM a 3:00 AM</span>
         </div>

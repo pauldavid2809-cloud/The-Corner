@@ -23,13 +23,13 @@ export function LocationSection() {
         <div className="text-center space-y-3 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-black uppercase tracking-wider">
             <MapPin className="w-4 h-4" />
-            C.C. COSTA VERDE · PLANTA ALTA
+            MARACAIBO · VENEZUELA
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight uppercase">
-            Encuéntranos en Costa Verde
+            Encuéntranos en The Corner
           </h2>
           <p className="text-sm sm:text-base text-zinc-300">
-            En la planta alta del C.C. Costa Verde (Local PA-35-36). Fácil acceso, estacionamiento seguro con vigilancia y el mejor ambiente climatizado.
+            Fácil acceso, estacionamiento seguro con vigilancia y el mejor ambiente climatizado para tus salidas y celebraciones.
           </p>
         </div>
 

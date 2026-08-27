@@ -1,5 +1,4 @@
 import { SITE_CONFIG } from "./config";
-import { formatDualPrice } from "@/data/currencies";
 
 export type WhatsAppTriggerType =
   | "TICKET_CREATED"
@@ -31,13 +30,11 @@ export type WhatsAppMessagePayload = {
  * Genera el texto formateado para cada tipo de automatización de WhatsApp
  */
 export function buildWhatsAppTemplate(payload: WhatsAppMessagePayload): string {
-  const cleanPhone = payload.phone.replace(/[^0-9]/g, "");
-
   switch (payload.type) {
     case "TICKET_CREATED":
       return (
-        `🎟️ *[THE CORNER COSTA VERDE] REPORTE DE PAGO RECIBIDO*\n\n` +
-        `¡Hola *${payload.clientName}*! 👋 Hemos registrado tu solicitud de reserva en *The Corner* (C.C. Costa Verde Planta Alta).\n\n` +
+        `🎟️ *[THE CORNER] REPORTE DE PAGO RECIBIDO*\n\n` +
+        `¡Hola *${payload.clientName}*! 👋 Hemos registrado tu solicitud de reserva en *The Corner* (Drinks & Entertainment).\n\n` +
         `📋 *Detalles de tu Pase:*\n` +
         `• *Código:* #${payload.ticketCode || "CRN-0000"}\n` +
         `• *Paquete:* ${payload.planName || "Paquete de Celebración"}\n` +
@@ -59,7 +56,7 @@ export function buildWhatsAppTemplate(payload: WhatsAppMessagePayload): string {
         `• *Ticket:* #${payload.ticketCode}\n` +
         `• *Fecha:* ${payload.date} (${payload.time})\n` +
         `• *Invitados:* ${payload.pax} personas\n` +
-        `• *Mesa:* C.C. Costa Verde, Local PA-35-36 (Planta Alta)\n\n` +
+        `• *Lugar:* The Corner Drinks & Entertainment\n\n` +
         `🟢 *Estado:* *PASE ACTIVO PARA ACCESO INMEDIATO*\n` +
         `Presenta tu código QR en la entrada para recibir tus baldes de cortesía, narguiles y acceso a Mario Kart/Beerpong.\n\n` +
         `📍 *Abrir en Google Maps:* ${SITE_CONFIG.mapsUrl}\n` +
@@ -68,7 +65,7 @@ export function buildWhatsAppTemplate(payload: WhatsAppMessagePayload): string {
 
     case "PAYMENT_REJECTED":
       return (
-        `⚠️ *[THE CORNER COSTA VERDE] NOVEDAD CON TU PAGO*\n\n` +
+        `⚠️ *[THE CORNER] NOVEDAD CON TU PAGO*\n\n` +
         `Estimado(a) *${payload.clientName}*,\n` +
         `Tuvimos un inconveniente al validar la referencia *#${payload.paymentRef || ""}* correspondiente al ticket *#${payload.ticketCode}*.\n\n` +
         `Por favor, reenvíanos la captura de tu comprobante bancario o el número de referencia corregido por este chat para activar tu pase de celebración de inmediato. 🙏`
@@ -80,7 +77,7 @@ export function buildWhatsAppTemplate(payload: WhatsAppMessagePayload): string {
         itemsList += `• ${item.quantity}x ${item.name} ($${(item.priceUSD * item.quantity).toFixed(2)})\n`;
       });
       return (
-        `🍔 *[THE CORNER COSTA VERDE] COMANDA DIGITAL RECIBIDA*\n\n` +
+        `🍔 *[THE CORNER] COMANDA DIGITAL RECIBIDA*\n\n` +
         `*Cliente:* ${payload.clientName} (${payload.phone})\n` +
         `*Modalidad:* ${payload.orderType === "mesa" ? `En Mesa (${payload.tableNumber})` : "Para Llevar"}\n\n` +
         `*Ítems Solicitados:*\n${itemsList}\n` +
@@ -93,8 +90,8 @@ export function buildWhatsAppTemplate(payload: WhatsAppMessagePayload): string {
       return (
         `⏰ *¡HOY ES TU NOCHE EN THE CORNER! 🍻*\n\n` +
         `¡Hola *${payload.clientName}*! Te recordamos que hoy tienes tu mesa reservada (*#${payload.ticketCode}*) para *${payload.planName}* a las *${payload.time}*.\n\n` +
-        `📍 *Llegada:* C.C. Costa Verde, Local PA-35-36, Planta Alta.\n` +
-        `🚗 *Estacionamiento:* Disponible con vigilancia en el centro comercial.\n\n` +
+        `📍 *Llegada:* The Corner Drinks & Entertainment, Maracaibo.\n` +
+        `🚗 *Estacionamiento:* Disponible con vigilancia privada.\n\n` +
         `¿Tienes alguna solicitud especial o cambio de hora? Escríbenos por aquí. ¡Nos vemos en breve! 🎮🍸`
       );
 
@@ -123,7 +120,6 @@ export async function sendAutomatedWhatsAppApi(
   const message = buildWhatsAppTemplate(payload);
   const directUrl = getWhatsAppDirectUrl(payload.phone, message);
 
-  // Si hay API configurada en variables de entorno, intenta despacho serverless
   const apiUrl = process.env.WHATSAPP_API_URL;
   const apiToken = process.env.WHATSAPP_API_TOKEN;
 

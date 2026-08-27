@@ -92,7 +92,7 @@ export function Footer() {
                 href="#ubicacion"
                 className="hover:text-orange-400 transition-colors"
               >
-                Ubicación C.C. Costa Verde (Planta Alta)
+                Ubicación en Maracaibo
               </a>
             </li>
           </ul>
@@ -115,7 +115,7 @@ export function Footer() {
 
       {/* Copyright */}
       <div className="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-zinc-500">
-        <p>© {new Date().getFullYear()} THE CORNER DRINKS & ENTERTAINMENT. C.C. Costa Verde, Maracaibo.</p>
+        <p>© {new Date().getFullYear()} THE CORNER DRINKS & ENTERTAINMENT. Maracaibo, Venezuela.</p>
         <p className="flex items-center gap-1">
           Desarrollado con <Heart className="w-3 h-3 text-rose-500 fill-rose-500" /> para Maracaibo
         </p>

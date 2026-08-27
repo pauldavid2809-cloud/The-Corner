@@ -48,7 +48,7 @@ export function Hero({
               </span>
               <span className="text-orange-400 font-extrabold uppercase">THE CORNER.</span>
               <span className="text-zinc-500">·</span>
-              <span className="text-zinc-300">C.C. Costa Verde (Planta Alta)</span>
+              <span className="text-zinc-300">Maracaibo</span>
             </motion.div>
 
             {/* Sticker de Cumpleaños (Inspirado en el flyer 'El Cumpleañero No Paga') */}
@@ -82,7 +82,7 @@ export function Hero({
               transition={{ duration: 0.4, delay: 0.2 }}
               className="text-sm sm:text-base text-zinc-300 max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed"
             >
-              El punto de encuentro de Maracaibo en la planta alta del C.C. Costa Verde.
+              El punto de encuentro y entretenimiento de Maracaibo.
               Baldes de cerveza a $10, Beerpong, Mario Kart en pantalla gigante, narguiles, karaoke y los mejores paquetes para tus eventos.
             </motion.p>
 

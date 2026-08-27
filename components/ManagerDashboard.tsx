@@ -9,9 +9,8 @@ import {
   MENU_ITEMS,
   BoardGame,
   MenuItem,
-  PaymentStatus,
 } from "@/data/cornerData";
-import { formatPrice, formatDualPrice } from "@/data/currencies";
+import { formatDualPrice } from "@/data/currencies";
 import { Logo } from "@/components/Logo";
 import {
   buildWhatsAppTemplate,
@@ -19,24 +18,18 @@ import {
   WhatsAppTriggerType,
 } from "@/lib/whatsapp";
 import {
-  ShieldCheck,
-  TrendingUp,
   Users,
   Gamepad2,
   DollarSign,
   Clock,
   CheckCircle,
   AlertCircle,
-  Sparkles,
   ArrowLeft,
   Search,
   Plus,
   Trash2,
   Utensils,
   QrCode,
-  UserCheck,
-  Settings,
-  HeartHandshake,
   Check,
   X,
   CreditCard,
@@ -48,12 +41,15 @@ import {
   Zap,
   Radio,
   Copy,
+  UserPlus,
+  Shield,
+  Filter,
 } from "lucide-react";
 
 type Props = {
   onExitManagerMode: () => void;
   bcvRate: number;
-  onUpdateBcvRate: (newRate: number) => void;
+  onUpdateBcvRate?: (newRate: number) => void;
 };
 
 type StaffUser = {
@@ -65,19 +61,12 @@ type StaffUser = {
   lastLogin: string;
 };
 
-export function ManagerDashboard({
-  onExitManagerMode,
-  bcvRate,
-  onUpdateBcvRate,
-}: Props) {
+export function ManagerDashboard({ onExitManagerMode, bcvRate }: Props) {
   const [activeTab, setActiveTab] = useState<
-    "payments" | "overview" | "whatsapp" | "menu" | "ludoteca" | "users" | "settings"
+    "payments" | "overview" | "menu" | "ludoteca" | "users" | "whatsapp"
   >("payments");
 
-  const [kpis, setKpis] = useState(INITIAL_MANAGER_KPIS);
   const [bookings, setBookings] = useState<LiveBooking[]>(INITIAL_LIVE_BOOKINGS);
-  const [tempRate, setTempRate] = useState<string>(bcvRate.toString());
-  const [rateSuccess, setRateSuccess] = useState<boolean>(false);
   const [filterPaymentStatus, setFilterPaymentStatus] = useState<string>("todos");
   const [paymentSearch, setPaymentSearch] = useState<string>("");
 
@@ -93,6 +82,10 @@ export function ManagerDashboard({
     url: string;
   } | null>(null);
 
+  // State: Mesas & Reservas
+  const [reservationSearch, setReservationSearch] = useState("");
+  const [filterTableStatus, setFilterTableStatus] = useState<string>("todos");
+
   // State: Menú (CRUD)
   const [menuItemsList, setMenuItemsList] = useState<MenuItem[]>(MENU_ITEMS);
   const [showAddMenuModal, setShowAddMenuModal] = useState(false);
@@ -100,26 +93,28 @@ export function ManagerDashboard({
   const [newMenuPrice, setNewMenuPrice] = useState("");
   const [newMenuCategory, setNewMenuCategory] = useState<MenuItem["category"]>("combos-promos");
   const [newMenuDesc, setNewMenuDesc] = useState("");
+  const [menuFilterCategory, setMenuFilterCategory] = useState<string>("todos");
 
   // State: Ludoteca (CRUD)
   const [gamesList, setGamesList] = useState<BoardGame[]>(BOARD_GAMES);
   const [showAddGameModal, setShowAddGameModal] = useState(false);
   const [newGameName, setNewGameName] = useState("");
-  const [newGamePlayers, setNewGamePlayers] = useState("3-4 jugadores");
-  const [newGameDuration, setNewGameDuration] = useState("30-45 min");
+  const [newGamePlayers, setNewGamePlayers] = useState("2 a 4 personas");
+  const [newGameDuration, setNewGameDuration] = useState("20-30 min");
   const [newGameDifficulty, setNewGameDifficulty] = useState<BoardGame["difficulty"]>("Fácil & Rápido");
   const [newGameCategory, setNewGameCategory] = useState<BoardGame["category"]>("party");
   const [newGameDesc, setNewGameDesc] = useState("");
+  const [gameFilterCategory, setGameFilterCategory] = useState<string>("todos");
 
   // State: Staff
   const [staffUsers, setStaffUsers] = useState<StaffUser[]>([
     {
       id: "USR-01",
-      name: "Paul David (Gerente)",
+      name: "Paul David",
       email: "gerencia@thecornermcbo.com",
       role: "Gerente General",
       status: "Activo",
-      lastLogin: "Hace 5 min",
+      lastLogin: "En línea ahora",
     },
     {
       id: "USR-02",
@@ -135,12 +130,25 @@ export function ManagerDashboard({
       email: "mixologia@thecornermcbo.com",
       role: "Barra / Mixología",
       status: "Activo",
-      lastLogin: "Ayer",
+      lastLogin: "Hoy 18:00",
+    },
+    {
+      id: "USR-04",
+      name: "José Rincón",
+      email: "puerta@thecornermcbo.com",
+      role: "Validador Puerta",
+      status: "Activo",
+      lastLogin: "Ayer 20:30",
     },
   ]);
+  const [showAddStaffModal, setShowAddStaffModal] = useState(false);
+  const [newStaffName, setNewStaffName] = useState("");
+  const [newStaffEmail, setNewStaffEmail] = useState("");
+  const [newStaffRole, setNewStaffRole] = useState<StaffUser["role"]>("Game Master");
 
   // Contadores
   const pendingPaymentsCount = bookings.filter((b) => b.paymentStatus === "pendiente").length;
+  const activeTablesCount = bookings.filter((b) => b.status === "en_mesa" || b.status === "confirmada").length;
 
   // Acciones de Pagos con Automatización WhatsApp
   const handleApprovePayment = (booking: LiveBooking) => {
@@ -158,7 +166,6 @@ export function ManagerDashboard({
       )
     );
 
-    // Construir mensaje oficial de WhatsApp de aprobación
     const message = buildWhatsAppTemplate({
       type: "PAYMENT_APPROVED",
       clientName: booking.clientName,
@@ -203,6 +210,108 @@ export function ManagerDashboard({
     }
   };
 
+  const handleUpdateBookingStatus = (id: string, newStatus: LiveBooking["status"]) => {
+    setBookings((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b))
+    );
+  };
+
+  const handleAssignTable = (id: string) => {
+    const table = prompt("Ingresa el número de mesa (ej. Mesa 5 / Zona VIP):");
+    if (table && table.trim()) {
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, tableNumber: table.trim() } : b))
+      );
+    }
+  };
+
+  const handleAddMenuItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMenuName.trim() || !newMenuPrice) return;
+
+    const newItem: MenuItem = {
+      id: `menu-custom-${Date.now()}`,
+      name: newMenuName.trim(),
+      priceUSD: parseFloat(newMenuPrice) || 5,
+      category: newMenuCategory,
+      description: newMenuDesc.trim() || "Especial de la casa The Corner.",
+      popular: true,
+      tags: ["Nuevo"],
+    };
+
+    setMenuItemsList((prev) => [newItem, ...prev]);
+    setShowAddMenuModal(false);
+    setNewMenuName("");
+    setNewMenuPrice("");
+    setNewMenuDesc("");
+  };
+
+  const handleDeleteMenuItem = (id: string) => {
+    setMenuItemsList((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  const handleAddGame = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGameName.trim()) return;
+
+    const newGame: BoardGame = {
+      id: `game-custom-${Date.now()}`,
+      name: newGameName.trim(),
+      players: newGamePlayers,
+      duration: newGameDuration,
+      difficulty: newGameDifficulty,
+      category: newGameCategory,
+      description: newGameDesc.trim() || "Juego disponible en la ludoteca de The Corner.",
+      rulesSummary: "Solicítalo al Game Master o mesero en turno.",
+      popular: true,
+      tags: ["Disponible"],
+      image: "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?auto=format&fit=crop&w=800&q=80",
+      minPlayers: 2,
+      maxPlayers: 6,
+      minMinutes: 20,
+    };
+
+    setGamesList((prev) => [newGame, ...prev]);
+    setShowAddGameModal(false);
+    setNewGameName("");
+    setNewGameDesc("");
+  };
+
+  const handleDeleteGame = (id: string) => {
+    setGamesList((prev) => prev.filter((g) => g.id !== id));
+  };
+
+  const handleAddStaff = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStaffName.trim() || !newStaffEmail.trim()) return;
+
+    const newStaff: StaffUser = {
+      id: `USR-0${staffUsers.length + 1}`,
+      name: newStaffName.trim(),
+      email: newStaffEmail.trim(),
+      role: newStaffRole,
+      status: "Activo",
+      lastLogin: "Nuevo",
+    };
+
+    setStaffUsers((prev) => [...prev, newStaff]);
+    setShowAddStaffModal(false);
+    setNewStaffName("");
+    setNewStaffEmail("");
+  };
+
+  const handleToggleStaffStatus = (id: string) => {
+    setStaffUsers((prev) =>
+      prev.map((s) =>
+        s.id === id ? { ...s, status: s.status === "Activo" ? "Inactivo" : "Activo" } : s
+      )
+    );
+  };
+
+  const handleDeleteStaff = (id: string) => {
+    setStaffUsers((prev) => prev.filter((s) => s.id !== id));
+  };
+
   const handleSendBroadcastReminder = () => {
     const confirmed = bookings.filter((b) => b.paymentStatus === "aprobado" || b.status === "confirmada");
     if (confirmed.length === 0) {
@@ -210,7 +319,6 @@ export function ManagerDashboard({
       return;
     }
 
-    // Abrir el primer chat y notificar
     const first = confirmed[0];
     const msg = buildWhatsAppTemplate({
       type: "EVENT_REMINDER",
@@ -223,29 +331,9 @@ export function ManagerDashboard({
     window.open(getWhatsAppDirectUrl(first.phone, msg), "_blank");
   };
 
-  const handleSaveRate = (e: React.FormEvent) => {
-    e.preventDefault();
-    const val = parseFloat(tempRate);
-    if (!isNaN(val) && val > 0) {
-      onUpdateBcvRate(val);
-      setRateSuccess(true);
-      setTimeout(() => setRateSuccess(false), 3000);
-    }
-  };
-
-  const handleDeleteMenuItem = (id: string) => {
-    setMenuItemsList((prev) => prev.filter((i) => i.id !== id));
-  };
-
-  const handleDeleteGame = (id: string) => {
-    setGamesList((prev) => prev.filter((g) => g.id !== id));
-  };
-
-  // Filtrado de Pagos
+  // Filtrados
   const filteredBookings = bookings.filter((b) => {
-    if (filterPaymentStatus !== "todos" && b.paymentStatus !== filterPaymentStatus) {
-      return false;
-    }
+    if (filterPaymentStatus !== "todos" && b.paymentStatus !== filterPaymentStatus) return false;
     if (paymentSearch.trim()) {
       const q = paymentSearch.toLowerCase();
       return (
@@ -257,7 +345,29 @@ export function ManagerDashboard({
     return true;
   });
 
-  // Mensaje de preview para el simulador de automatizaciones
+  const filteredReservations = bookings.filter((b) => {
+    if (filterTableStatus !== "todos" && b.status !== filterTableStatus) return false;
+    if (reservationSearch.trim()) {
+      const q = reservationSearch.toLowerCase();
+      return (
+        b.clientName.toLowerCase().includes(q) ||
+        b.id.toLowerCase().includes(q) ||
+        b.tableNumber?.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  const filteredMenuItems = menuItemsList.filter((item) => {
+    if (menuFilterCategory !== "todos" && item.category !== menuFilterCategory) return false;
+    return true;
+  });
+
+  const filteredGames = gamesList.filter((game) => {
+    if (gameFilterCategory !== "todos" && game.category !== gameFilterCategory) return false;
+    return true;
+  });
+
   const previewTemplateMessage = buildWhatsAppTemplate({
     type: selectedTemplate,
     clientName: testClientName,
@@ -273,45 +383,44 @@ export function ManagerDashboard({
   });
 
   return (
-    <div className="min-h-screen bg-[#07070B] text-zinc-100 pt-20 pb-16 px-4 sm:px-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#07070B] text-zinc-100 pt-8 pb-16 px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Cabecera del Dashboard */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-zinc-900/90 border border-orange-500/30 shadow-2xl">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl bg-zinc-900/90 border border-orange-500/30 shadow-2xl">
+          <div className="flex items-center gap-3">
             <button
               onClick={onExitManagerMode}
-              className="p-2.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all flex items-center gap-2 text-xs font-bold shrink-0"
+              className="p-2.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all flex items-center gap-1.5 text-xs font-bold shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Volver a la WebApp</span>
             </button>
             <Logo size="sm" withText />
             <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase">
-              Admin & Conciliación
+              Gerencia
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="px-3 py-1.5 rounded-xl bg-black/60 border border-white/10 text-xs">
-              <span className="text-zinc-500 text-[10px] block font-bold">Tasa BCV:</span>
-              <span className="font-mono font-bold text-amber-400">{bcvRate.toFixed(2)} Bs./$</span>
-            </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="px-3 py-1 rounded-xl bg-black/60 border border-white/5 font-mono text-zinc-300">
+              📊 {activeTablesCount} Mesas Activas
+            </span>
           </div>
         </div>
 
-        {/* Notificación Flotante de Automatización */}
+        {/* Notificación Flotante de WhatsApp */}
         {recentNotification && (
           <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center text-black font-black">
-                <MessageCircle className="w-5 h-5 fill-black" />
+              <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center text-black font-black">
+                <MessageCircle className="w-4 h-4 fill-black" />
               </div>
               <div>
                 <span className="text-xs font-black text-white block">
                   ¡Automatización WhatsApp Lista para {recentNotification.client}!
                 </span>
                 <span className="text-[11px] text-emerald-300">
-                  {recentNotification.type} con pase QR activo generado.
+                  {recentNotification.type} con pase QR activo listo.
                 </span>
               </div>
             </div>
@@ -336,16 +445,15 @@ export function ManagerDashboard({
           </div>
         )}
 
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs (Sin Tasa BCV ni Ajustes) */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-white/10">
           {[
             { id: "payments", label: "💰 Gestión de Pagos", badge: pendingPaymentsCount },
-            { id: "whatsapp", label: "📱 Automatizaciones WhatsApp" },
             { id: "overview", label: "🎟️ Mesas & Reservas" },
             { id: "menu", label: "🍔 Menú & Promos" },
             { id: "ludoteca", label: "🎲 Ludoteca & Juegos" },
             { id: "users", label: "👥 Usuarios & Staff" },
-            { id: "settings", label: "⚙️ Tasa BCV & Ajustes" },
+            { id: "whatsapp", label: "📱 Automatizaciones WhatsApp" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -366,7 +474,9 @@ export function ManagerDashboard({
           ))}
         </div>
 
-        {/* TAB 1: GESTIÓN DE PAGOS Y CONCILIACIÓN */}
+        {/* =========================================================================
+            TAB 1: GESTIÓN DE PAGOS Y CONCILIACIÓN
+           ========================================================================= */}
         {activeTab === "payments" && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -530,7 +640,6 @@ export function ManagerDashboard({
                               </>
                             )}
 
-                            {/* Botón WhatsApp */}
                             <a
                               href={getWhatsAppDirectUrl(
                                 b.phone,
@@ -566,7 +675,379 @@ export function ManagerDashboard({
           </div>
         )}
 
-        {/* TAB 2: CENTRO DE AUTOMATIZACIONES DE WHATSAPP (PARRANDÓN) */}
+        {/* =========================================================================
+            TAB 2: MESAS & RESERVAS (OVERVIEW)
+           ========================================================================= */}
+        {activeTab === "overview" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-white uppercase flex items-center gap-2">
+                  <QrCode className="w-5 h-5 text-orange-400" />
+                  Monitor de Mesas & Reservas en Vivo
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Control de asistencia en puerta, asignación de mesas y estado de cada grupo.
+                </p>
+              </div>
+
+              {/* Filtros de Mesas */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                {["todos", "en_mesa", "confirmada", "pendiente", "finalizada"].map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setFilterTableStatus(st)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
+                      filterTableStatus === st
+                        ? "bg-orange-500 text-black font-black"
+                        : "bg-zinc-900 text-zinc-400 hover:text-white"
+                    }`}
+                  >
+                    {st.replace("_", " ")}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Búsqueda */}
+            <div className="relative max-w-md">
+              <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={reservationSearch}
+                onChange={(e) => setReservationSearch(e.target.value)}
+                placeholder="Buscar por cliente, #ticket o número de mesa..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-zinc-900 border border-zinc-800 text-xs text-white focus:outline-none focus:border-orange-500"
+              />
+            </div>
+
+            {/* Grid de Mesas / Tarjetas de Reserva */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredReservations.map((booking) => (
+                <div
+                  key={booking.id}
+                  className="p-5 rounded-3xl bg-zinc-900/80 border border-zinc-800 hover:border-orange-500/40 transition-all flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-black text-orange-400">
+                        #{booking.id}
+                      </span>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                          booking.status === "en_mesa"
+                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            : booking.status === "confirmada"
+                            ? "bg-sky-500/20 text-sky-400 border border-sky-500/30"
+                            : booking.status === "pendiente"
+                            ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                            : "bg-zinc-800 text-zinc-400"
+                        }`}
+                      >
+                        {booking.status.replace("_", " ")}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="font-black text-base text-white">{booking.clientName}</h3>
+                      <p className="text-xs text-zinc-400 font-medium">{booking.phone}</p>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-black/50 border border-white/5 space-y-1 text-xs">
+                      <p className="text-zinc-300">
+                        <strong className="text-orange-400">Paquete:</strong> {booking.planName}
+                      </p>
+                      <p className="text-zinc-300">
+                        <strong className="text-zinc-400">Invitados:</strong> {booking.pax} pax
+                      </p>
+                      <p className="text-zinc-300">
+                        <strong className="text-zinc-400">Hora:</strong> {booking.date} · {booking.time}
+                      </p>
+                      <p className="text-zinc-300">
+                        <strong className="text-zinc-400">Mesa:</strong>{" "}
+                        <span className="font-bold text-white">{booking.tableNumber || "Por Asignar"}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Acciones de Mesa */}
+                  <div className="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => handleAssignTable(booking.id)}
+                      className="px-2.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-zinc-300"
+                    >
+                      Asignar Mesa
+                    </button>
+
+                    <div className="flex items-center gap-1.5">
+                      {booking.status !== "en_mesa" && (
+                        <button
+                          onClick={() => handleUpdateBookingStatus(booking.id, "en_mesa")}
+                          className="px-2.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-black text-xs"
+                        >
+                          En Mesa
+                        </button>
+                      )}
+                      {booking.status === "en_mesa" && (
+                        <button
+                          onClick={() => handleUpdateBookingStatus(booking.id, "finalizada")}
+                          className="px-2.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold"
+                        >
+                          Finalizar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB 3: MENÚ & PROMOS
+           ========================================================================= */}
+        {activeTab === "menu" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-white uppercase flex items-center gap-2">
+                  <Utensils className="w-5 h-5 text-orange-400" />
+                  Gestión de Menú, Narguiles & Promos
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Agrega, edita precios o retira platos, baldes de cerveza o cócteles en tiempo real.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowAddMenuModal(true)}
+                  className="px-4 py-2.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-black font-black text-xs flex items-center gap-1.5 shadow-lg shadow-orange-500/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Agregar Producto</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filtros de Categorías */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              {[
+                { id: "todos", label: "Todos los Ítems" },
+                { id: "combos-promos", label: "Promos & Baldes" },
+                { id: "narguiles-shots", label: "Narguiles & Shots" },
+                { id: "cocteles-botellas", label: "Cócteles & Tragos" },
+                { id: "comida-munchies", label: "Comida & Munchies" },
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setMenuFilterCategory(cat.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                    menuFilterCategory === cat.id
+                      ? "bg-orange-500 text-black font-black"
+                      : "bg-zinc-900 text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Grid de Ítems */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredMenuItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-5 rounded-3xl bg-zinc-900/80 border border-zinc-800 flex flex-col justify-between hover:border-zinc-700 transition-all"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase text-orange-400 px-2 py-0.5 rounded bg-orange-500/10">
+                        {item.category}
+                      </span>
+                      <span className="font-black text-white text-base">
+                        ${item.priceUSD.toFixed(2)}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-sm text-white">{item.name}</h3>
+                    <p className="text-xs text-zinc-400 leading-relaxed">{item.description}</p>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs">
+                    <span className="text-[10px] font-bold text-emerald-400">✓ En Carta</span>
+                    <button
+                      onClick={() => handleDeleteMenuItem(item.id)}
+                      className="p-1.5 text-zinc-500 hover:text-rose-400 transition-colors"
+                      title="Eliminar ítem"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB 4: LUDOTECA & JUEGOS
+           ========================================================================= */}
+        {activeTab === "ludoteca" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-white uppercase flex items-center gap-2">
+                  <Gamepad2 className="w-5 h-5 text-purple-400" />
+                  Catálogo de Juegos de Mesa & Arcade
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Administra la colección de juegos disponibles para los clientes en las mesas.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowAddGameModal(true)}
+                className="px-4 py-2.5 rounded-2xl bg-purple-500 hover:bg-purple-600 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-purple-500/20"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Agregar Juego</span>
+              </button>
+            </div>
+
+            {/* Grid de Juegos */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredGames.map((game) => (
+                <div
+                  key={game.id}
+                  className="p-5 rounded-3xl bg-zinc-900/80 border border-zinc-800 flex flex-col justify-between space-y-4 hover:border-purple-500/40 transition-all"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase text-purple-400 px-2 py-0.5 rounded bg-purple-500/10">
+                        {game.category}
+                      </span>
+                      <span className="text-[11px] font-bold text-zinc-400">
+                        {game.players}
+                      </span>
+                    </div>
+                    <h3 className="font-black text-base text-white">{game.name}</h3>
+                    <p className="text-xs text-zinc-400">{game.description}</p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-[10px] font-bold text-zinc-300">
+                        ⏱️ {game.duration}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-[10px] font-bold text-zinc-300">
+                        🎲 {game.difficulty}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-emerald-400">● Disponible en barra</span>
+                    <button
+                      onClick={() => handleDeleteGame(game.id)}
+                      className="p-1.5 text-zinc-500 hover:text-rose-400 transition-colors"
+                      title="Eliminar juego"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB 5: USUARIOS & STAFF
+           ========================================================================= */}
+        {activeTab === "users" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-white uppercase flex items-center gap-2">
+                  <Users className="w-5 h-5 text-sky-400" />
+                  Equipo & Staff de The Corner
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Control de accesos y roles del equipo (Gerentes, Game Masters, Barra y Validador de Puerta).
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowAddStaffModal(true)}
+                className="px-4 py-2.5 rounded-2xl bg-sky-500 hover:bg-sky-600 text-black font-black text-xs flex items-center gap-1.5 shadow-lg shadow-sky-500/20"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Agregar Miembro</span>
+              </button>
+            </div>
+
+            {/* Tabla de Staff */}
+            <div className="overflow-x-auto rounded-3xl border border-zinc-800 bg-zinc-900/60 shadow-xl">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-zinc-950/80 text-[10px] uppercase font-black tracking-wider text-zinc-400 border-b border-white/5">
+                  <tr>
+                    <th className="p-4">Miembro / ID</th>
+                    <th className="p-4">Rol en Sala</th>
+                    <th className="p-4">Correo</th>
+                    <th className="p-4">Estado</th>
+                    <th className="p-4">Último Acceso</th>
+                    <th className="p-4 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {staffUsers.map((staff) => (
+                    <tr key={staff.id} className="hover:bg-zinc-800/40 transition-colors">
+                      <td className="p-4">
+                        <span className="font-bold text-white block text-sm">{staff.name}</span>
+                        <span className="font-mono text-[10px] text-zinc-500">{staff.id}</span>
+                      </td>
+
+                      <td className="p-4">
+                        <span className="px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[11px] font-bold">
+                          {staff.role}
+                        </span>
+                      </td>
+
+                      <td className="p-4 font-mono text-zinc-300">{staff.email}</td>
+
+                      <td className="p-4">
+                        <button
+                          onClick={() => handleToggleStaffStatus(staff.id)}
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase transition-all ${
+                            staff.status === "Activo"
+                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                              : "bg-zinc-800 text-zinc-500"
+                          }`}
+                        >
+                          {staff.status}
+                        </button>
+                      </td>
+
+                      <td className="p-4 text-zinc-400">{staff.lastLogin}</td>
+
+                      <td className="p-4 text-right">
+                        <button
+                          onClick={() => handleDeleteStaff(staff.id)}
+                          className="p-1.5 text-zinc-500 hover:text-rose-400"
+                          title="Eliminar miembro"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB 6: CENTRO DE AUTOMATIZACIONES DE WHATSAPP
+           ========================================================================= */}
         {activeTab === "whatsapp" && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -615,7 +1096,7 @@ export function ManagerDashboard({
                   {
                     type: "EVENT_REMINDER" as WhatsAppTriggerType,
                     title: "⏰ Recordatorio del Día del Evento",
-                    desc: "Recuerda la hora de llegada, mapa GPS y comodidades de Costa Verde.",
+                    desc: "Recuerda la hora de llegada, mapa GPS y servicios de The Corner.",
                   },
                   {
                     type: "ORDER_PLACED" as WhatsAppTriggerType,
@@ -703,100 +1184,242 @@ export function ManagerDashboard({
           </div>
         )}
 
-        {/* TAB 3: MENÚ & PROMOS */}
-        {activeTab === "menu" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-black text-white uppercase flex items-center gap-2">
-                  <Utensils className="w-5 h-5 text-orange-400" />
-                  Gestión de Menú, Narguiles & Promos
-                </h2>
-                <p className="text-xs text-zinc-400">
-                  Agrega, edita precios o retira platos, baldes de cerveza o cócteles.
-                </p>
+        {/* MODAL: AGREGAR PLATO AL MENÚ */}
+        {showAddMenuModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-3xl bg-zinc-900 border border-orange-500/40 p-6 space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 className="font-black text-base text-white uppercase">
+                  Agregar Ítem al Menú
+                </h3>
+                <button onClick={() => setShowAddMenuModal(false)} className="text-zinc-400 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              <button
-                onClick={() => setShowAddMenuModal(true)}
-                className="px-4 py-2.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-black font-black text-xs flex items-center gap-1.5 shadow-lg shadow-orange-500/20"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Agregar Producto</span>
-              </button>
-            </div>
+              <form onSubmit={handleAddMenuItem} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Nombre del Producto:</label>
+                  <input
+                    type="text"
+                    required
+                    value={newMenuName}
+                    onChange={(e) => setNewMenuName(e.target.value)}
+                    placeholder="Ej. Balde Extra Frío (10 Cervezas)"
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-white"
+                  />
+                </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {menuItemsList.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex flex-col justify-between"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase text-orange-400">
-                        {item.category}
-                      </span>
-                      <span className="font-black text-white">
-                        ${item.priceUSD.toFixed(2)}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-sm text-white">{item.name}</h3>
-                    <p className="text-xs text-zinc-400">{item.description}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-zinc-300 font-bold mb-1">Precio ($ USD):</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      required
+                      value={newMenuPrice}
+                      onChange={(e) => setNewMenuPrice(e.target.value)}
+                      placeholder="10.00"
+                      className="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-white font-mono"
+                    />
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-white/5 flex justify-end">
-                    <button
-                      onClick={() => handleDeleteMenuItem(item.id)}
-                      className="p-1.5 text-zinc-500 hover:text-rose-400"
+                  <div>
+                    <label className="block text-zinc-300 font-bold mb-1">Categoría:</label>
+                    <select
+                      value={newMenuCategory}
+                      onChange={(e) => setNewMenuCategory(e.target.value as any)}
+                      className="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-white"
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      <option value="combos-promos">Promos & Baldes</option>
+                      <option value="narguiles-shots">Narguiles & Shots</option>
+                      <option value="cocteles-botellas">Cócteles & Tragos</option>
+                      <option value="comida-munchies">Comida & Munchies</option>
+                    </select>
                   </div>
                 </div>
-              ))}
+
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Descripción:</label>
+                  <textarea
+                    rows={2}
+                    value={newMenuDesc}
+                    onChange={(e) => setNewMenuDesc(e.target.value)}
+                    placeholder="Detalles del producto o promo..."
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-white"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddMenuModal(false)}
+                    className="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-300 font-bold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-orange-500 text-black font-black"
+                  >
+                    Guardar Producto
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
 
-        {/* TAB 4: AJUSTES & TASA BCV */}
-        {activeTab === "settings" && (
-          <div className="max-w-xl p-6 rounded-3xl bg-zinc-900 border border-zinc-800 space-y-5">
-            <h2 className="text-lg font-black text-white uppercase flex items-center gap-2">
-              <Settings className="w-5 h-5 text-orange-400" />
-              Configuración de Tasa BCV Oficial
-            </h2>
-            <p className="text-xs text-zinc-400">
-              Modifica la tasa del Banco Central de Venezuela utilizada para calcular los montos en Bolívares de los paquetes y de la carta.
-            </p>
-
-            <form onSubmit={handleSaveRate} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-zinc-300 block mb-1">
-                  Tasa Dólar BCV (Bs. / USD):
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={tempRate}
-                  onChange={(e) => setTempRate(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-black border border-zinc-700 text-sm font-mono text-white focus:outline-none focus:border-orange-500"
-                />
+        {/* MODAL: AGREGAR JUEGO A LA LUDOTECA */}
+        {showAddGameModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-3xl bg-zinc-900 border border-purple-500/40 p-6 space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 className="font-black text-base text-white uppercase">
+                  Agregar Juego a Ludoteca
+                </h3>
+                <button onClick={() => setShowAddGameModal(false)} className="text-zinc-400 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {rateSuccess && (
-                <p className="text-xs text-emerald-400 font-bold">
-                  ✓ Tasa actualizada exitosamente en toda la plataforma.
-                </p>
-              )}
+              <form onSubmit={handleAddGame} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Nombre del Juego:</label>
+                  <input
+                    type="text"
+                    required
+                    value={newGameName}
+                    onChange={(e) => setNewGameName(e.target.value)}
+                    placeholder="Ej. Mario Kart Deluxe / Catán"
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-white"
+                  />
+                </div>
 
-              <button
-                type="submit"
-                className="py-2.5 px-5 rounded-xl bg-orange-500 text-black font-black text-xs hover:bg-orange-600 shadow-md transition-all"
-              >
-                Guardar Nueva Tasa
-              </button>
-            </form>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-zinc-300 font-bold mb-1">Jugadores:</label>
+                    <input
+                      type="text"
+                      value={newGamePlayers}
+                      onChange={(e) => setNewGamePlayers(e.target.value)}
+                      placeholder="2 a 6 personas"
+                      className="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-zinc-300 font-bold mb-1">Duración:</label>
+                    <input
+                      type="text"
+                      value={newGameDuration}
+                      onChange={(e) => setNewGameDuration(e.target.value)}
+                      placeholder="20-30 min"
+                      className="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Descripción corta:</label>
+                  <textarea
+                    rows={2}
+                    value={newGameDesc}
+                    onChange={(e) => setNewGameDesc(e.target.value)}
+                    placeholder="Reglas rápidas o temática del juego..."
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-white"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddGameModal(false)}
+                    className="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-300 font-bold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-purple-500 text-white font-black"
+                  >
+                    Guardar Juego
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: AGREGAR STAFF */}
+        {showAddStaffModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-3xl bg-zinc-900 border border-sky-500/40 p-6 space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 className="font-black text-base text-white uppercase">
+                  Agregar Miembro al Equipo
+                </h3>
+                <button onClick={() => setShowAddStaffModal(false)} className="text-zinc-400 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddStaff} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Nombre Completo:</label>
+                  <input
+                    type="text"
+                    required
+                    value={newStaffName}
+                    onChange={(e) => setNewStaffName(e.target.value)}
+                    placeholder="Ej. Roberto Medina"
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Correo Electrónico:</label>
+                  <input
+                    type="email"
+                    required
+                    value={newStaffEmail}
+                    onChange={(e) => setNewStaffEmail(e.target.value)}
+                    placeholder="staff@thecornermcbo.com"
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Rol / Cargo:</label>
+                  <select
+                    value={newStaffRole}
+                    onChange={(e) => setNewStaffRole(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl bg-black border border-zinc-700 text-white"
+                  >
+                    <option value="Gerente General">Gerente General</option>
+                    <option value="Game Master">Game Master</option>
+                    <option value="Barra / Mixología">Barra / Mixología</option>
+                    <option value="Validador Puerta">Validador Puerta</option>
+                  </select>
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddStaffModal(false)}
+                    className="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-300 font-bold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-sky-500 text-black font-black"
+                  >
+                    Registrar Miembro
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </div>

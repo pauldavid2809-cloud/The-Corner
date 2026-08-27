@@ -59,7 +59,7 @@ export function QrTicketModal({
           paymentMethod: booking.paymentMethod,
           ref: booking.paymentReference || "En Puerta",
           status: booking.paymentStatus,
-          venue: "The Corner Costa Verde",
+          venue: "The Corner Drinks & Entertainment",
         });
 
         QRCode.toCanvas(
@@ -86,7 +86,7 @@ export function QrTicketModal({
   const dualPrice = formatDualPrice(booking.totalUSD, bcvRate);
 
   const whatsappMsg =
-    `🎟️ *[THE CORNER COSTA VERDE] NUEVO REPORTE DE PAGO & RESERVA*\n\n` +
+    `🎟️ *[THE CORNER] NUEVO REPORTE DE PAGO & RESERVA*\n\n` +
     `*Código:* #${ticketCode}\n` +
     `*Anfitrión/Cliente:* ${booking.name}\n` +
     `*WhatsApp:* ${booking.phone}\n` +
@@ -239,7 +239,7 @@ export function QrTicketModal({
             <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white text-black space-y-1">
               <canvas ref={canvasRef} className="rounded-lg max-w-full" />
               <span className="text-[9px] font-mono font-bold tracking-widest text-zinc-600 uppercase">
-                VALIDACIÓN EN PUERTA · COSTA VERDE
+                VALIDACIÓN EN PUERTA · MARACAIBO
               </span>
             </div>
           </div>

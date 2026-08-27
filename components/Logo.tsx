@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-
 type LogoProps = {
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
@@ -18,10 +16,10 @@ export function Logo({
   subtext = "DRINKS & ENTERTAINMENT",
 }: LogoProps) {
   const sizeMap = {
-    sm: { box: "w-8 h-8", img: 32, text: "text-base", sub: "text-[8px]" },
-    md: { box: "w-10 h-10", img: 40, text: "text-lg sm:text-xl", sub: "text-[9px]" },
-    lg: { box: "w-14 h-14", img: 56, text: "text-2xl", sub: "text-[11px]" },
-    xl: { box: "w-20 h-20", img: 80, text: "text-3xl", sub: "text-xs" },
+    sm: { box: "w-8 h-8", text: "text-base", sub: "text-[8px]" },
+    md: { box: "w-10 h-10", text: "text-lg sm:text-xl", sub: "text-[9px]" },
+    lg: { box: "w-14 h-14", text: "text-2xl", sub: "text-[11px]" },
+    xl: { box: "w-20 h-20", text: "text-3xl", sub: "text-xs" },
   };
 
   const currentSize = sizeMap[size];
@@ -46,9 +44,6 @@ export function Logo({
               className={`font-black tracking-tighter text-white uppercase group-hover:text-orange-400 transition-colors ${currentSize.text} ${textClassName}`}
             >
               THE CORNER.
-            </span>
-            <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/40 uppercase">
-              Costa Verde
             </span>
           </div>
           {subtext && (
