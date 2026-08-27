@@ -82,6 +82,10 @@ export function ManagerDashboard({ onExitManagerMode, bcvRate }: Props) {
     url: string;
   } | null>(null);
 
+  // State: Modal de Captura de Comprobante
+  const [previewProofImage, setPreviewProofImage] = useState<string | null>(null);
+  const [previewProofTitle, setPreviewProofTitle] = useState<string>("");
+
   // State: Mesas & Reservas
   const [reservationSearch, setReservationSearch] = useState("");
   const [filterTableStatus, setFilterTableStatus] = useState<string>("todos");
@@ -588,6 +592,20 @@ export function ManagerDashboard({ onExitManagerMode, bcvRate }: Props) {
                             <span className="text-[10px] text-zinc-500 block">
                               En Puerta
                             </span>
+                          )}
+
+                          {/* Botón Ver Captura si existe */}
+                          {b.proofUrl && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPreviewProofImage(b.proofUrl!);
+                                setPreviewProofTitle(`Comprobante de ${b.clientName} (#${b.id})`);
+                              }}
+                              className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-800 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[10px] font-bold transition-all"
+                            >
+                              <span>📸 Ver Captura</span>
+                            </button>
                           )}
                         </td>
 
@@ -1419,6 +1437,43 @@ export function ManagerDashboard({ onExitManagerMode, bcvRate }: Props) {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: VER CAPTURA DE COMPROBANTE DE PAGO */}
+        {previewProofImage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl bg-zinc-950 border border-orange-500/50 p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 className="font-black text-sm text-white uppercase truncate pr-2">
+                  📸 {previewProofTitle || "Comprobante de Pago"}
+                </h3>
+                <button
+                  onClick={() => setPreviewProofImage(null)}
+                  className="p-1.5 rounded-full bg-zinc-800 text-zinc-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="rounded-2xl overflow-hidden bg-black border border-white/10 flex items-center justify-center p-2">
+                <img
+                  src={previewProofImage}
+                  alt="Captura del Comprobante"
+                  className="max-h-[65vh] w-auto object-contain rounded-xl"
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setPreviewProofImage(null)}
+                  className="px-5 py-2.5 rounded-xl bg-orange-500 text-black font-black text-xs uppercase"
+                >
+                  Cerrar Vista Previa
+                </button>
+              </div>
             </div>
           </div>
         )}

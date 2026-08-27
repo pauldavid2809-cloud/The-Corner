@@ -132,6 +132,7 @@ export default function HomePage() {
           paymentReference: bookingData.paymentReference,
           paymentBank: bookingData.paymentBank,
           paymentStatus: bookingData.paymentStatus,
+          proofUrl: bookingData.proofUrl,
         };
         localStorage.setItem("corner_last_booking", JSON.stringify(storedBooking));
 
@@ -159,6 +160,7 @@ export default function HomePage() {
       paymentReference: bookingData.paymentReference,
       paymentBank: bookingData.paymentBank,
       paymentStatus: bookingData.paymentStatus,
+      proofUrl: bookingData.proofUrl,
     });
   };
 

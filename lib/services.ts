@@ -136,6 +136,7 @@ export async function saveBookingToSupabase(booking: {
   paymentReference?: string;
   paymentBank?: string;
   paymentStatus?: PaymentStatus;
+  proofUrl?: string;
 }): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {
     return true;
@@ -161,6 +162,7 @@ export async function saveBookingToSupabase(booking: {
         payment_reference: booking.paymentReference || null,
         payment_bank: booking.paymentBank || null,
         payment_status: booking.paymentStatus || "pendiente",
+        proof_url: booking.proofUrl || null,
       },
     ]);
 

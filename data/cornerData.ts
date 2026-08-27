@@ -90,6 +90,7 @@ export type LiveBooking = {
   paymentBank?: string;
   paymentStatus: PaymentStatus;
   paymentAmountVES?: number;
+  proofUrl?: string;
   approvedAt?: string;
   approvedBy?: string;
 };

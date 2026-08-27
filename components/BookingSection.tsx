@@ -23,6 +23,10 @@ import {
   Building2,
   DollarSign,
   Smartphone,
+  Upload,
+  Image as ImageIcon,
+  Trash2,
+  Camera,
 } from "lucide-react";
 
 export type BookingData = {
@@ -43,6 +47,7 @@ export type BookingData = {
   paymentReference?: string;
   paymentBank?: string;
   paymentStatus: "pendiente" | "aprobado";
+  proofUrl?: string;
 };
 
 type Props = {
@@ -71,6 +76,8 @@ export function BookingSection({
   const [paymentReference, setPaymentReference] = useState<string>("");
   const [paymentBank, setPaymentBank] = useState<string>("Banesco");
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [proofUrl, setProofUrl] = useState<string | null>(null);
+  const [isReadingFile, setIsReadingFile] = useState<boolean>(false);
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>("");
@@ -94,6 +101,34 @@ export function BookingSection({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setErrorMsg("Por favor, selecciona un archivo de imagen válido (JPG, PNG).");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg("La imagen es muy pesada. Por favor selecciona una captura menor a 5MB.");
+      return;
+    }
+
+    setIsReadingFile(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setProofUrl(event.target?.result as string);
+      setIsReadingFile(false);
+      setErrorMsg("");
+    };
+    reader.onerror = () => {
+      setErrorMsg("Error al leer el archivo de la captura.");
+      setIsReadingFile(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName.trim()) {
@@ -105,8 +140,8 @@ export function BookingSection({
       return;
     }
 
-    if (paymentMethod !== "efectivo" && !paymentReference.trim()) {
-      setErrorMsg("Por favor, ingresa el número de referencia del pago realizado.");
+    if (paymentMethod !== "efectivo" && !paymentReference.trim() && !proofUrl) {
+      setErrorMsg("Por favor, ingresa el número de referencia o adjunta la captura del pago.");
       return;
     }
 
@@ -134,6 +169,7 @@ export function BookingSection({
         paymentReference: paymentReference.trim() || undefined,
         paymentBank: paymentMethod === "pago_movil" ? paymentBank : undefined,
         paymentStatus: "pendiente",
+        proofUrl: proofUrl || undefined,
       });
     }, 300);
   };
@@ -540,6 +576,66 @@ export function BookingSection({
                         <option value="Otro">Otro Banco</option>
                       </select>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* Zona de Subida de Captura / Comprobante */}
+              {paymentMethod !== "efectivo" && (
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-zinc-300 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5 text-orange-400" />
+                      Captura del Comprobante (Recomendado):
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-normal">JPG o PNG (máx 5MB)</span>
+                  </label>
+
+                  {proofUrl ? (
+                    <div className="relative rounded-2xl overflow-hidden border border-emerald-500/50 bg-black/80 p-2.5 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={proofUrl}
+                          alt="Comprobante"
+                          className="w-12 h-12 object-cover rounded-xl border border-emerald-500/40 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <span className="text-xs font-black text-emerald-400 block truncate">
+                            ✓ Captura Adjunta con Éxito
+                          </span>
+                          <span className="text-[10px] text-zinc-400 block">
+                            Lista para verificación de gerencia
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setProofUrl(null)}
+                        className="p-2 rounded-xl bg-zinc-800 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-all shrink-0"
+                        title="Eliminar captura"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-zinc-700 hover:border-orange-500/70 bg-zinc-900/50 hover:bg-zinc-900 cursor-pointer transition-all group">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="sr-only"
+                      />
+                      <div className="flex items-center gap-2 text-zinc-400 group-hover:text-white">
+                        <Upload className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-bold">
+                          {isReadingFile ? "Cargando archivo..." : "Toca aquí para adjuntar la captura del pago"}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-zinc-500 mt-0.5">
+                        Agiliza la aprobación y activación inmediata de tu QR
+                      </span>
+                    </label>
                   )}
                 </div>
               )}
