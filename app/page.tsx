@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CurrencyMode, DEFAULT_BCV_RATE } from "@/data/currencies";
-import { BoardGame, MenuItem, WeeklyEvent } from "@/data/cornerData";
+import { BoardGame, MenuItem, WeeklyEvent, BOARD_GAMES, MENU_ITEMS } from "@/data/cornerData";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { LudotecaSection } from "@/components/LudotecaSection";
@@ -16,6 +16,12 @@ import { EventsSection } from "@/components/EventsSection";
 import { ManagerDashboard } from "@/components/ManagerDashboard";
 import { LocationSection } from "@/components/LocationSection";
 import { Footer } from "@/components/Footer";
+import {
+  saveBookingToSupabase,
+  fetchBcvRateFromSupabase,
+  fetchMenuFromSupabase,
+  fetchGamesFromSupabase,
+} from "@/lib/services";
 
 export default function HomePage() {
   const [currency, setCurrency] = useState<CurrencyMode>("USD");
@@ -33,7 +39,7 @@ export default function HomePage() {
   const [activeBooking, setActiveBooking] = useState<BookingData | null>(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState<boolean>(false);
 
-  // Carga inicial y query params para modo admin (?gerente=true o ?admin=true)
+  // Carga inicial de Supabase y query params
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -41,7 +47,7 @@ export default function HomePage() {
         setIsManagerMode(true);
       }
 
-      // Cargar carrito previo de localStorage si existe
+      // Cargar carrito de localStorage
       try {
         const savedCart = localStorage.getItem("corner_cart");
         if (savedCart) {
@@ -50,6 +56,11 @@ export default function HomePage() {
       } catch (e) {
         console.error(e);
       }
+
+      // Sincronizar tasa BCV desde Supabase
+      fetchBcvRateFromSupabase().then((rate) => {
+        if (rate) setBcvRate(rate);
+      });
     }
   }, []);
 
@@ -109,8 +120,24 @@ export default function HomePage() {
   };
 
   const handleGenerateQrTicket = (bookingData: BookingData) => {
+    const code = `CRN-${Math.floor(1000 + Math.random() * 9000)}`;
     setActiveBooking(bookingData);
     setIsTicketModalOpen(true);
+
+    // Guardar en Supabase en tiempo real
+    saveBookingToSupabase({
+      code,
+      clientName: bookingData.name,
+      clientPhone: bookingData.phone,
+      planId: bookingData.plan.id,
+      planName: bookingData.plan.name,
+      date: bookingData.date,
+      time: bookingData.time,
+      pax: bookingData.pax,
+      totalUSD: bookingData.totalUSD,
+      totalVES: bookingData.totalUSD * bcvRate,
+      notes: bookingData.notes,
+    });
   };
 
   const handleSelectEventToBook = (event: WeeklyEvent) => {
