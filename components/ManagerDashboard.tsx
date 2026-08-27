@@ -14,6 +14,11 @@ import {
 import { formatPrice, formatDualPrice } from "@/data/currencies";
 import { Logo } from "@/components/Logo";
 import {
+  buildWhatsAppTemplate,
+  getWhatsAppDirectUrl,
+  WhatsAppTriggerType,
+} from "@/lib/whatsapp";
+import {
   ShieldCheck,
   TrendingUp,
   Users,
@@ -39,6 +44,10 @@ import {
   ExternalLink,
   Smartphone,
   Building2,
+  Send,
+  Zap,
+  Radio,
+  Copy,
 } from "lucide-react";
 
 type Props = {
@@ -56,23 +65,13 @@ type StaffUser = {
   lastLogin: string;
 };
 
-type ClientRecord = {
-  id: string;
-  name: string;
-  phone: string;
-  visits: number;
-  totalSpentUSD: number;
-  favoriteGame: string;
-  lastVisit: string;
-};
-
 export function ManagerDashboard({
   onExitManagerMode,
   bcvRate,
   onUpdateBcvRate,
 }: Props) {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "payments" | "menu" | "ludoteca" | "users" | "crm" | "settings"
+    "payments" | "overview" | "whatsapp" | "menu" | "ludoteca" | "users" | "settings"
   >("payments");
 
   const [kpis, setKpis] = useState(INITIAL_MANAGER_KPIS);
@@ -81,6 +80,18 @@ export function ManagerDashboard({
   const [rateSuccess, setRateSuccess] = useState<boolean>(false);
   const [filterPaymentStatus, setFilterPaymentStatus] = useState<string>("todos");
   const [paymentSearch, setPaymentSearch] = useState<string>("");
+
+  // WhatsApp Automation State
+  const [selectedTemplate, setSelectedTemplate] = useState<WhatsAppTriggerType>("PAYMENT_APPROVED");
+  const [copiedMsg, setCopiedMsg] = useState(false);
+  const [testPhone, setTestPhone] = useState("+58 412 0308674");
+  const [testClientName, setTestClientName] = useState("Luis Torres");
+  const [autoOpenWhatsApp, setAutoOpenWhatsApp] = useState(true);
+  const [recentNotification, setRecentNotification] = useState<{
+    client: string;
+    type: string;
+    url: string;
+  } | null>(null);
 
   // State: Menú (CRUD)
   const [menuItemsList, setMenuItemsList] = useState<MenuItem[]>(MENU_ITEMS);
@@ -131,11 +142,11 @@ export function ManagerDashboard({
   // Contadores
   const pendingPaymentsCount = bookings.filter((b) => b.paymentStatus === "pendiente").length;
 
-  // Acciones de Pagos
-  const handleApprovePayment = (id: string) => {
+  // Acciones de Pagos con Automatización WhatsApp
+  const handleApprovePayment = (booking: LiveBooking) => {
     setBookings((prev) =>
       prev.map((b) =>
-        b.id === id
+        b.id === booking.id
           ? {
               ...b,
               paymentStatus: "aprobado",
@@ -146,12 +157,70 @@ export function ManagerDashboard({
           : b
       )
     );
+
+    // Construir mensaje oficial de WhatsApp de aprobación
+    const message = buildWhatsAppTemplate({
+      type: "PAYMENT_APPROVED",
+      clientName: booking.clientName,
+      phone: booking.phone,
+      ticketCode: booking.id,
+      planName: booking.planName,
+      date: booking.date,
+      time: booking.time,
+      pax: booking.pax,
+      totalUSD: booking.totalUSD,
+    });
+
+    const directUrl = getWhatsAppDirectUrl(booking.phone, message);
+
+    setRecentNotification({
+      client: booking.clientName,
+      type: "Pase QR Aprobado",
+      url: directUrl,
+    });
+
+    if (autoOpenWhatsApp) {
+      window.open(directUrl, "_blank");
+    }
   };
 
-  const handleRejectPayment = (id: string) => {
+  const handleRejectPayment = (booking: LiveBooking) => {
     setBookings((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, paymentStatus: "rechazado" } : b))
+      prev.map((b) => (b.id === booking.id ? { ...b, paymentStatus: "rechazado" } : b))
     );
+
+    const message = buildWhatsAppTemplate({
+      type: "PAYMENT_REJECTED",
+      clientName: booking.clientName,
+      phone: booking.phone,
+      ticketCode: booking.id,
+      paymentRef: booking.paymentReference,
+    });
+
+    const directUrl = getWhatsAppDirectUrl(booking.phone, message);
+    if (autoOpenWhatsApp) {
+      window.open(directUrl, "_blank");
+    }
+  };
+
+  const handleSendBroadcastReminder = () => {
+    const confirmed = bookings.filter((b) => b.paymentStatus === "aprobado" || b.status === "confirmada");
+    if (confirmed.length === 0) {
+      alert("No hay reservas confirmadas para enviar recordatorio.");
+      return;
+    }
+
+    // Abrir el primer chat y notificar
+    const first = confirmed[0];
+    const msg = buildWhatsAppTemplate({
+      type: "EVENT_REMINDER",
+      clientName: first.clientName,
+      phone: first.phone,
+      ticketCode: first.id,
+      planName: first.planName,
+      time: first.time,
+    });
+    window.open(getWhatsAppDirectUrl(first.phone, msg), "_blank");
   };
 
   const handleSaveRate = (e: React.FormEvent) => {
@@ -164,50 +233,8 @@ export function ManagerDashboard({
     }
   };
 
-  const handleAddMenuItem = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMenuName || !newMenuPrice) return;
-    const newItem: MenuItem = {
-      id: `custom-${Date.now()}`,
-      name: newMenuName,
-      priceUSD: parseFloat(newMenuPrice),
-      category: newMenuCategory,
-      description: newMenuDesc,
-      popular: false,
-    };
-    setMenuItemsList((prev) => [newItem, ...prev]);
-    setNewMenuName("");
-    setNewMenuPrice("");
-    setNewMenuDesc("");
-    setShowAddMenuModal(false);
-  };
-
   const handleDeleteMenuItem = (id: string) => {
     setMenuItemsList((prev) => prev.filter((i) => i.id !== id));
-  };
-
-  const handleAddGame = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newGameName) return;
-    const newG: BoardGame = {
-      id: `game-${Date.now()}`,
-      name: newGameName,
-      category: newGameCategory,
-      players: newGamePlayers,
-      duration: newGameDuration,
-      difficulty: newGameDifficulty,
-      description: newGameDesc,
-      rulesSummary: "Reglas disponibles en The Corner Costa Verde.",
-      tags: ["Nuevo", "Costa Verde"],
-      image: "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?auto=format&fit=crop&w=800&q=80",
-      minPlayers: 2,
-      maxPlayers: 8,
-      minMinutes: 30,
-    };
-    setGamesList((prev) => [newG, ...prev]);
-    setNewGameName("");
-    setNewGameDesc("");
-    setShowAddGameModal(false);
   };
 
   const handleDeleteGame = (id: string) => {
@@ -228,6 +255,21 @@ export function ManagerDashboard({
       );
     }
     return true;
+  });
+
+  // Mensaje de preview para el simulador de automatizaciones
+  const previewTemplateMessage = buildWhatsAppTemplate({
+    type: selectedTemplate,
+    clientName: testClientName,
+    phone: testPhone,
+    ticketCode: "CRN-8492",
+    planName: "Paquete 1 (5 Personas)",
+    date: "Viernes",
+    time: "08:00 PM",
+    pax: 5,
+    totalUSD: 50,
+    paymentMethod: "pago_movil",
+    paymentRef: "849201",
   });
 
   return (
@@ -257,10 +299,48 @@ export function ManagerDashboard({
           </div>
         </div>
 
+        {/* Notificación Flotante de Automatización */}
+        {recentNotification && (
+          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center text-black font-black">
+                <MessageCircle className="w-5 h-5 fill-black" />
+              </div>
+              <div>
+                <span className="text-xs font-black text-white block">
+                  ¡Automatización WhatsApp Lista para {recentNotification.client}!
+                </span>
+                <span className="text-[11px] text-emerald-300">
+                  {recentNotification.type} con pase QR activo generado.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={recentNotification.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-black text-xs flex items-center gap-1.5"
+              >
+                <span>Re-enviar Chat</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+              <button
+                onClick={() => setRecentNotification(null)}
+                className="p-1.5 text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Navigation Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-white/10">
           {[
             { id: "payments", label: "💰 Gestión de Pagos", badge: pendingPaymentsCount },
+            { id: "whatsapp", label: "📱 Automatizaciones WhatsApp" },
             { id: "overview", label: "🎟️ Mesas & Reservas" },
             { id: "menu", label: "🍔 Menú & Promos" },
             { id: "ludoteca", label: "🎲 Ludoteca & Juegos" },
@@ -286,7 +366,7 @@ export function ManagerDashboard({
           ))}
         </div>
 
-        {/* TAB 1: GESTIÓN DE PAGOS Y CONCILIACIÓN (SIMILAR A PARRANDÓN) */}
+        {/* TAB 1: GESTIÓN DE PAGOS Y CONCILIACIÓN */}
         {activeTab === "payments" && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -296,25 +376,38 @@ export function ManagerDashboard({
                   Conciliación & Aprobación de Pagos
                 </h2>
                 <p className="text-xs text-zinc-400">
-                  Verifica las transferencias de Pago Móvil, Zelle o Binance y aprueba la emisión del QR oficial.
+                  Verifica las transferencias de Pago Móvil, Zelle o Binance y aprueba la emisión del QR oficial con WhatsApp automático.
                 </p>
               </div>
 
-              {/* Filtros */}
-              <div className="flex items-center gap-2">
-                {["todos", "pendiente", "aprobado", "rechazado"].map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => setFilterPaymentStatus(st)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
-                      filterPaymentStatus === st
-                        ? "bg-orange-500 text-black font-black"
-                        : "bg-zinc-900 text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    {st}
-                  </button>
-                ))}
+              {/* Toggle Auto WhatsApp */}
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-xs font-bold text-zinc-300 cursor-pointer bg-zinc-900 px-3 py-1.5 rounded-xl border border-zinc-800">
+                  <input
+                    type="checkbox"
+                    checked={autoOpenWhatsApp}
+                    onChange={(e) => setAutoOpenWhatsApp(e.target.checked)}
+                    className="accent-emerald-500"
+                  />
+                  <span>Auto-despachar WhatsApp al Aprobar</span>
+                </label>
+
+                {/* Filtros */}
+                <div className="flex items-center gap-1">
+                  {["todos", "pendiente", "aprobado", "rechazado"].map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => setFilterPaymentStatus(st)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
+                        filterPaymentStatus === st
+                          ? "bg-orange-500 text-black font-black"
+                          : "bg-zinc-900 text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -420,16 +513,17 @@ export function ManagerDashboard({
                             {b.paymentStatus === "pendiente" && (
                               <>
                                 <button
-                                  onClick={() => handleApprovePayment(b.id)}
+                                  onClick={() => handleApprovePayment(b)}
                                   className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-black text-xs shadow-md shadow-emerald-500/20 flex items-center gap-1"
                                 >
                                   <Check className="w-3.5 h-3.5" />
-                                  <span>Aprobar & Activar QR</span>
+                                  <span>Aprobar & Enviar QR</span>
                                 </button>
 
                                 <button
-                                  onClick={() => handleRejectPayment(b.id)}
+                                  onClick={() => handleRejectPayment(b)}
                                   className="px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold"
+                                  title="Rechazar pago"
                                 >
                                   <X className="w-3.5 h-3.5" />
                                 </button>
@@ -438,13 +532,26 @@ export function ManagerDashboard({
 
                             {/* Botón WhatsApp */}
                             <a
-                              href={`https://wa.me/${b.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-                                `¡Hola ${b.clientName}! Te escribimos de The Corner Costa Verde. Tu reserva #${b.id} para el ${b.planName} tiene estado: *${b.paymentStatus.toUpperCase()}*. ¡Te esperamos!`
-                              )}`}
+                              href={getWhatsAppDirectUrl(
+                                b.phone,
+                                buildWhatsAppTemplate({
+                                  type: b.paymentStatus === "aprobado" ? "PAYMENT_APPROVED" : "TICKET_CREATED",
+                                  clientName: b.clientName,
+                                  phone: b.phone,
+                                  ticketCode: b.id,
+                                  planName: b.planName,
+                                  date: b.date,
+                                  time: b.time,
+                                  pax: b.pax,
+                                  totalUSD: b.totalUSD,
+                                  paymentMethod: b.paymentMethod,
+                                  paymentRef: b.paymentReference,
+                                })
+                              )}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-emerald-400"
-                              title="Abrir WhatsApp con el cliente"
+                              title="Abrir WhatsApp oficial"
                             >
                               <MessageCircle className="w-4 h-4" />
                             </a>
@@ -459,7 +566,144 @@ export function ManagerDashboard({
           </div>
         )}
 
-        {/* TAB 2: MENÚ & PROMOS */}
+        {/* TAB 2: CENTRO DE AUTOMATIZACIONES DE WHATSAPP (PARRANDÓN) */}
+        {activeTab === "whatsapp" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-white uppercase flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-emerald-400" />
+                  Centro de Automatizaciones de WhatsApp
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Configuración de plantillas automáticas, despachadores y difusión de recordatorios masivos.
+                </p>
+              </div>
+
+              <button
+                onClick={handleSendBroadcastReminder}
+                className="px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-black font-black text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+              >
+                <Radio className="w-4 h-4" />
+                <span>📢 Difusión Masiva de Recordatorio Hoy</span>
+              </button>
+            </div>
+
+            <div className="grid lg:grid-cols-12 gap-6">
+              {/* Columna Izquierda: Selector de Plantillas */}
+              <div className="lg:col-span-5 space-y-3">
+                <span className="text-xs font-black uppercase text-zinc-400 tracking-wider block">
+                  Plantillas Automatizadas Disponibles:
+                </span>
+
+                {[
+                  {
+                    type: "PAYMENT_APPROVED" as WhatsAppTriggerType,
+                    title: "🎉 Aprobación de Pago & QR Activo",
+                    desc: "Se envía automáticamente al presionar 'Aprobar Pago'. Activa el pase QR.",
+                  },
+                  {
+                    type: "TICKET_CREATED" as WhatsAppTriggerType,
+                    title: "🎟️ Registro & Espera de Comprobante",
+                    desc: "Se envía cuando el cliente reporta su reserva en la WebApp.",
+                  },
+                  {
+                    type: "PAYMENT_REJECTED" as WhatsAppTriggerType,
+                    title: "⚠️ Novedad / Comprobante Inválido",
+                    desc: "Solicita al cliente re-enviar la captura o referencia correcta.",
+                  },
+                  {
+                    type: "EVENT_REMINDER" as WhatsAppTriggerType,
+                    title: "⏰ Recordatorio del Día del Evento",
+                    desc: "Recuerda la hora de llegada, mapa GPS y comodidades de Costa Verde.",
+                  },
+                  {
+                    type: "ORDER_PLACED" as WhatsAppTriggerType,
+                    title: "🍔 Comanda Digital a Cocina / Barra",
+                    desc: "Envía el detalle de pedidos directos en mesa.",
+                  },
+                ].map((tpl) => (
+                  <div
+                    key={tpl.type}
+                    onClick={() => setSelectedTemplate(tpl.type)}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                      selectedTemplate === tpl.type
+                        ? "bg-zinc-900 border-emerald-500 shadow-lg shadow-emerald-500/10"
+                        : "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700"
+                    }`}
+                  >
+                    <h4 className="text-xs font-black text-white">{tpl.title}</h4>
+                    <p className="text-[11px] text-zinc-400 mt-1">{tpl.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Columna Derecha: Vista Previa y Probador en Vivo */}
+              <div className="lg:col-span-7 space-y-4 rounded-3xl bg-zinc-950/80 border border-zinc-800 p-6">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-emerald-400" />
+                    <span className="text-xs font-black uppercase text-white">
+                      Vista Previa del Mensaje Oficial
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(previewTemplateMessage);
+                      setCopiedMsg(true);
+                      setTimeout(() => setCopiedMsg(false), 2000);
+                    }}
+                    className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs flex items-center gap-1 font-bold"
+                  >
+                    {copiedMsg ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedMsg ? "Copiado" : "Copiar"}</span>
+                  </button>
+                </div>
+
+                {/* Burbuja Estilo WhatsApp */}
+                <div className="p-4 rounded-2xl bg-[#0b241b] border border-emerald-500/30 font-sans text-xs text-zinc-100 whitespace-pre-wrap leading-relaxed shadow-inner">
+                  {previewTemplateMessage}
+                </div>
+
+                {/* Simulador de Envío */}
+                <div className="pt-3 border-t border-white/10 space-y-3">
+                  <span className="text-[11px] font-bold text-zinc-400 block uppercase">
+                    Probar Envío de Automatización:
+                  </span>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={testClientName}
+                      onChange={(e) => setTestClientName(e.target.value)}
+                      placeholder="Nombre del Cliente"
+                      className="px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white"
+                    />
+                    <input
+                      type="tel"
+                      value={testPhone}
+                      onChange={(e) => setTestPhone(e.target.value)}
+                      placeholder="Número (+58...)"
+                      className="px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white"
+                    />
+                  </div>
+
+                  <a
+                    href={getWhatsAppDirectUrl(testPhone, previewTemplateMessage)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-black text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20"
+                  >
+                    <Send className="w-4 h-4 fill-black" />
+                    <span>Lanzar Prueba de WhatsApp en Vivo</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: MENÚ & PROMOS */}
         {activeTab === "menu" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -515,7 +759,7 @@ export function ManagerDashboard({
           </div>
         )}
 
-        {/* TAB 3: AJUSTES & TASA BCV */}
+        {/* TAB 4: AJUSTES & TASA BCV */}
         {activeTab === "settings" && (
           <div className="max-w-xl p-6 rounded-3xl bg-zinc-900 border border-zinc-800 space-y-5">
             <h2 className="text-lg font-black text-white uppercase flex items-center gap-2">
