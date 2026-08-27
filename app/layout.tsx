@@ -10,22 +10,24 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: `${SITE_CONFIG.officialTitle} — C.C. Costa Verde, Maracaibo`,
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://the-corner-webapp.vercel.app"
+  ),
+  title: `${SITE_CONFIG.officialTitle} — Maracaibo`,
   description: SITE_CONFIG.description,
   keywords: [
     "The Corner Maracaibo",
-    "The Corner Costa Verde",
+    "The Corner",
     "Narguiles Maracaibo",
     "Beerpong Maracaibo",
     "Mario Kart Maracaibo",
     "Juegos de mesa Maracaibo",
     "Paquetes de cumpleaños Maracaibo",
-    "Costa Verde Planta Alta",
   ],
   authors: [{ name: "The Corner" }, { name: "ByteBridge" }],
   creator: "The Corner & ByteBridge",
   openGraph: {
-    title: `${SITE_CONFIG.officialTitle} | C.C. Costa Verde`,
+    title: `${SITE_CONFIG.officialTitle} | Maracaibo`,
     description: SITE_CONFIG.tagline,
     url: "https://the-corner-webapp.vercel.app",
     siteName: SITE_CONFIG.name,
