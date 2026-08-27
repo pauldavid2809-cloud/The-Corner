@@ -9,37 +9,29 @@ import {
   PaymentMethod,
   PaymentStatus,
 } from "@/data/cornerData";
-import { DEFAULT_BCV_RATE, DEFAULT_EUR_BCV_RATE, ExchangeRates } from "@/data/currencies";
+import { DEFAULT_BCV_RATE } from "@/data/currencies";
 
 /**
  * =========================================================================
- * SERVICIOS DE TASAS BCV EN VIVO (DÓLAR Y EURO)
+ * SERVICIOS DE TASA BCV EN VIVO (EURO BCV)
  * =========================================================================
  */
 
-export async function fetchLiveExchangeRates(): Promise<ExchangeRates> {
+export async function fetchLiveExchangeRates(): Promise<number> {
   try {
     const res = await fetch("/api/bcv", { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
-      return {
-        usd: Number(data.usd) || DEFAULT_BCV_RATE,
-        eur: Number(data.eur) || DEFAULT_EUR_BCV_RATE,
-        lastUpdated: data.lastUpdated,
-      };
+      return Number(data.rate || data.bcvRate) || DEFAULT_BCV_RATE;
     }
   } catch (err) {
     console.warn("No se pudo consultar /api/bcv directamente:", err);
   }
 
-  return {
-    usd: DEFAULT_BCV_RATE,
-    eur: DEFAULT_EUR_BCV_RATE,
-    lastUpdated: new Date().toISOString(),
-  };
+  return DEFAULT_BCV_RATE;
 }
 
-export async function fetchBcvRateFromSupabase(): Promise<ExchangeRates> {
+export async function fetchBcvRateFromSupabase(): Promise<number> {
   if (!isSupabaseConfigured || !supabase) {
     return fetchLiveExchangeRates();
   }
@@ -56,20 +48,13 @@ export async function fetchBcvRateFromSupabase(): Promise<ExchangeRates> {
     }
 
     const val = data.value;
-    return {
-      usd: Number(val?.rate || val?.usd) || DEFAULT_BCV_RATE,
-      eur: Number(val?.eur) || DEFAULT_EUR_BCV_RATE,
-      lastUpdated: val?.updated_at,
-    };
+    return Number(val?.rate || val?.bcvRate || val?.eur || val?.usd) || DEFAULT_BCV_RATE;
   } catch (err) {
     return fetchLiveExchangeRates();
   }
 }
 
-export async function updateExchangeRatesInSupabase(rates: {
-  usd: number;
-  eur: number;
-}): Promise<boolean> {
+export async function updateExchangeRatesInSupabase(rate: number): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return true;
 
   try {
@@ -77,16 +62,14 @@ export async function updateExchangeRatesInSupabase(rates: {
       {
         key: "bcv_rate",
         value: {
-          rate: rates.usd,
-          usd: rates.usd,
-          eur: rates.eur,
+          rate: rate,
           updated_at: new Date().toISOString(),
         },
       },
     ]);
     return !error;
   } catch (err) {
-    console.error("Error updating exchange rates:", err);
+    console.error("Error updating exchange rate:", err);
     return false;
   }
 }

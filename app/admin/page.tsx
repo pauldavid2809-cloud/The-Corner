@@ -11,12 +11,12 @@ export default function AdminPage() {
   const [bcvRate, setBcvRate] = useState<number>(DEFAULT_BCV_RATE);
 
   useEffect(() => {
-    fetchLiveExchangeRates().then((rates) => {
-      if (rates.usd) setBcvRate(rates.usd);
+    fetchLiveExchangeRates().then((rate) => {
+      if (rate) setBcvRate(rate);
     });
 
-    fetchBcvRateFromSupabase().then((rates) => {
-      if (rates?.usd) setBcvRate(rates.usd);
+    fetchBcvRateFromSupabase().then((rate) => {
+      if (rate) setBcvRate(rate);
     });
   }, []);
 

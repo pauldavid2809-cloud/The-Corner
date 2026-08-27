@@ -18,8 +18,7 @@ import {
 type Props = {
   currency: CurrencyMode;
   onSelectCurrency: (mode: CurrencyMode) => void;
-  usdRate: number;
-  eurRate: number;
+  bcvRate: number;
   cartCount: number;
   onOpenCart: () => void;
   onOpenDiceRoller: () => void;
@@ -28,8 +27,7 @@ type Props = {
 export function Header({
   currency,
   onSelectCurrency,
-  usdRate,
-  eurRate,
+  bcvRate,
   cartCount,
   onOpenCart,
 }: Props) {
@@ -60,18 +58,15 @@ export function Header({
           : "bg-gradient-to-b from-[#09090E] via-[#09090E]/80 to-transparent py-3 sm:py-4"
       }`}
     >
-      {/* Ticker Superior de Tasas BCV en Vivo (Dólar & Euro) */}
+      {/* Ticker Superior con Tasa BCV Oficial */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-1.5 hidden sm:flex items-center justify-between text-[11px] text-zinc-400">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <span className="flex items-center gap-1 font-bold text-orange-400">
             <TrendingUp className="w-3 h-3 text-emerald-400" />
-            Tasas Oficiales BCV:
+            Tasa Oficial BCV:
           </span>
           <span className="bg-zinc-900/90 px-2 py-0.5 rounded-md border border-zinc-800 font-mono text-zinc-200">
-            💵 $1 = <strong className="text-emerald-400">{usdRate.toFixed(2)}</strong> Bs.
-          </span>
-          <span className="bg-zinc-900/90 px-2 py-0.5 rounded-md border border-zinc-800 font-mono text-zinc-200">
-            💶 €1 = <strong className="text-sky-400">{eurRate.toFixed(2)}</strong> Bs.
+            💵 1$ = <strong className="text-emerald-400">{bcvRate.toFixed(2)}</strong> Bs.
           </span>
         </div>
 
@@ -108,14 +103,14 @@ export function Header({
           })}
         </nav>
 
-        {/* Actions (Triple Currency Selector, Cart, Mobile Menu) */}
+        {/* Actions (Currency Selector $ USD / Bs. VES, Cart, Mobile Menu) */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Selector de Moneda: USD ($), EUR (€), VES (Bs.) */}
+          {/* Selector de Moneda: Solo USD ($) y VES (Bs.) */}
           <div className="flex items-center p-0.5 rounded-xl border border-zinc-800 bg-zinc-900/90 text-xs font-bold">
             <button
               onClick={() => onSelectCurrency("USD")}
-              title={`Ver precios en Dólares ($)`}
-              className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
+              title="Ver precios en Dólares ($)"
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all ${
                 currency === "USD"
                   ? "bg-emerald-500 text-black shadow-sm"
                   : "text-zinc-400 hover:text-white"
@@ -124,26 +119,15 @@ export function Header({
               $ USD
             </button>
             <button
-              onClick={() => onSelectCurrency("EUR")}
-              title={`Ver precios en Euros (€)`}
-              className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
-                currency === "EUR"
-                  ? "bg-sky-500 text-black shadow-sm"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              € EUR
-            </button>
-            <button
               onClick={() => onSelectCurrency("VES")}
-              title={`Ver precios en Bolívares (Bs.)`}
-              className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
+              title={`Ver precios en Bolívares (a tasa BCV ${bcvRate.toFixed(2)} Bs.)`}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all ${
                 currency === "VES"
                   ? "bg-amber-500 text-black shadow-sm"
                   : "text-zinc-400 hover:text-white"
               }`}
             >
-              Bs.
+              Bs. VES
             </button>
           </div>
 
@@ -177,12 +161,8 @@ export function Header({
         <div className="lg:hidden mt-2 px-4 py-3 bg-[#0d0d14] border-b border-orange-500/20 space-y-2">
           {/* Mobile Rate Ticker */}
           <div className="p-2.5 rounded-xl bg-black/60 border border-white/5 flex items-center justify-between text-xs">
-            <span className="text-zinc-400 text-[11px]">BCV Hoy:</span>
-            <div className="flex gap-2">
-              <span className="font-mono text-emerald-400 font-bold">$ {usdRate.toFixed(2)}</span>
-              <span className="text-zinc-600">|</span>
-              <span className="font-mono text-sky-400 font-bold">€ {eurRate.toFixed(2)}</span>
-            </div>
+            <span className="text-zinc-400 text-[11px]">Tasa Oficial BCV:</span>
+            <span className="font-mono text-emerald-400 font-bold">1$ = {bcvRate.toFixed(2)} Bs.</span>
           </div>
 
           {navLinks.map((link) => {

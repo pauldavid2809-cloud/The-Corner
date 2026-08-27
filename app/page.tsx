@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  CurrencyMode,
-  DEFAULT_BCV_RATE,
-  DEFAULT_EUR_BCV_RATE,
-} from "@/data/currencies";
+import { CurrencyMode, DEFAULT_BCV_RATE } from "@/data/currencies";
 import { BoardGame, MenuItem, WeeklyEvent } from "@/data/cornerData";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
@@ -27,8 +23,7 @@ import {
 
 export default function HomePage() {
   const [currency, setCurrency] = useState<CurrencyMode>("USD");
-  const [usdRate, setUsdRate] = useState<number>(DEFAULT_BCV_RATE);
-  const [eurRate, setEurRate] = useState<number>(DEFAULT_EUR_BCV_RATE);
+  const [bcvRate, setBcvRate] = useState<number>(DEFAULT_BCV_RATE);
 
   // Carrito / Comanda
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -41,7 +36,7 @@ export default function HomePage() {
   const [activeBooking, setActiveBooking] = useState<BookingData | null>(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState<boolean>(false);
 
-  // Carga inicial de Tasas BCV en Vivo (Dólar & Euro)
+  // Carga inicial de Tasa BCV en Vivo (Euro BCV para cálculo de Bolívares)
   useEffect(() => {
     if (typeof window !== "undefined") {
       // Cargar carrito de localStorage
@@ -54,16 +49,14 @@ export default function HomePage() {
         console.error(e);
       }
 
-      // Consultar API en vivo de Dólar y Euro BCV
-      fetchLiveExchangeRates().then((rates) => {
-        if (rates.usd) setUsdRate(rates.usd);
-        if (rates.eur) setEurRate(rates.eur);
+      // Consultar API en vivo de tasa oficial
+      fetchLiveExchangeRates().then((rate) => {
+        if (rate) setBcvRate(rate);
       });
 
       // Consultar también Supabase
-      fetchBcvRateFromSupabase().then((rates) => {
-        if (rates?.usd) setUsdRate(rates.usd);
-        if (rates?.eur) setEurRate(rates.eur);
+      fetchBcvRateFromSupabase().then((rate) => {
+        if (rate) setBcvRate(rate);
       });
     }
   }, []);
@@ -130,7 +123,7 @@ export default function HomePage() {
       time: bookingData.time,
       pax: bookingData.pax,
       totalUSD: bookingData.totalUSD,
-      totalVES: bookingData.totalUSD * usdRate,
+      totalVES: bookingData.totalUSD * bcvRate,
       notes: bookingData.notes,
       paymentMethod: bookingData.paymentMethod,
       paymentReference: bookingData.paymentReference,
@@ -157,12 +150,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#09090E] text-slate-100 selection:bg-orange-500 selection:text-black">
-      {/* Cabecera Principal (Cliente) */}
+      {/* Cabecera Principal (Cliente con switch USD / VES) */}
       <Header
         currency={currency}
         onSelectCurrency={(mode) => setCurrency(mode)}
-        usdRate={usdRate}
-        eurRate={eurRate}
+        bcvRate={bcvRate}
         cartCount={totalCartCount}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenDiceRoller={() => setIsDiceRollerOpen(true)}
@@ -180,14 +172,14 @@ export default function HomePage() {
         {/* 2. Paquetes de Celebración & Cumpleaños con Gestión de Pagos */}
         <BookingSection
           currency={currency}
-          bcvRate={usdRate}
+          bcvRate={bcvRate}
           onGenerateQrTicket={handleGenerateQrTicket}
         />
 
         {/* 3. Menú Oficial: Promos Baldes 10$, Narguiles, 2 Perros $5, 3 Burgers $15 */}
         <MenuSection
           currency={currency}
-          bcvRate={usdRate}
+          bcvRate={bcvRate}
           onAddToCart={handleAddToCart}
         />
 
@@ -229,7 +221,7 @@ export default function HomePage() {
         isOpen={isTicketModalOpen}
         onClose={() => setIsTicketModalOpen(false)}
         booking={activeBooking}
-        bcvRate={usdRate}
+        bcvRate={bcvRate}
       />
 
       {/* Drawer de la Comanda Digital */}
@@ -238,7 +230,7 @@ export default function HomePage() {
         onClose={() => setIsCartOpen(false)}
         items={cartItems}
         currency={currency}
-        bcvRate={usdRate}
+        bcvRate={bcvRate}
         onUpdateQuantity={handleUpdateQuantity}
         onClearCart={handleClearCart}
       />
