@@ -91,31 +91,33 @@ export function Hero({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.25 }}
-              className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2"
+              className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center lg:justify-start gap-2.5 pt-2"
             >
               <button
                 onClick={onScrollToPackages}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#FF5500] to-[#E04B00] hover:from-[#FF6611] hover:to-[#FF5500] text-black font-black text-sm shadow-xl shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.97] transition-all"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#FF5500] to-[#E04B00] hover:from-[#FF6611] hover:to-[#FF5500] text-black font-black text-xs sm:text-sm tracking-wide shadow-xl shadow-orange-500/30 active:scale-[0.97] transition-transform"
               >
                 <PartyPopper className="w-4 h-4 text-black" />
-                VER PAQUETES DE EVENTOS (DESDE $50)
+                <span>VER PAQUETES CON QR (DESDE $50)</span>
               </button>
 
-              <button
-                onClick={onScrollToMenu}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700 hover:border-orange-500 text-white font-bold text-sm hover:scale-[1.02] active:scale-[0.97] transition-all"
-              >
-                <Flame className="w-4 h-4 text-orange-400" />
-                PROMOS & BALDES $10
-              </button>
+              <div className="grid grid-cols-2 sm:flex items-center gap-2">
+                <button
+                  onClick={onScrollToMenu}
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-3.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700 hover:border-orange-500 text-white font-bold text-xs active:scale-[0.97] transition-all"
+                >
+                  <Flame className="w-4 h-4 text-orange-400" />
+                  <span>PROMOS $10</span>
+                </button>
 
-              <button
-                onClick={onScrollToGames}
-                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/30 text-purple-300 font-bold text-xs hover:scale-[1.02] transition-all"
-              >
-                <Gamepad2 className="w-4 h-4 text-purple-400" />
-                MARIO KART & JUEGOS
-              </button>
+                <button
+                  onClick={onScrollToGames}
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-3.5 rounded-2xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/30 text-purple-300 font-bold text-xs active:scale-[0.97] transition-all"
+                >
+                  <Gamepad2 className="w-4 h-4 text-purple-400" />
+                  <span>MARIO KART</span>
+                </button>
+              </div>
             </motion.div>
 
             {/* Highlights de Promos Reales */}

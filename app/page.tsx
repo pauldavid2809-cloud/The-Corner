@@ -15,6 +15,7 @@ import { CartDrawer, CartItem } from "@/components/CartDrawer";
 import { EventsSection } from "@/components/EventsSection";
 import { LocationSection } from "@/components/LocationSection";
 import { Footer } from "@/components/Footer";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import {
   saveBookingToSupabase,
   fetchBcvRateFromSupabase,
@@ -193,7 +194,7 @@ export default function HomePage() {
       />
 
       {/* Vista Principal de Clientes */}
-      <main>
+      <main className="pb-20 lg:pb-0">
         {/* 1. Hero Section con estética oficial de The Corner */}
         <Hero
           onScrollToPackages={() => scrollTo("paquetes")}
@@ -230,6 +231,12 @@ export default function HomePage() {
         {/* Footer Oficial */}
         <Footer />
       </main>
+
+      {/* Barra de Navegación Flotante para Móviles */}
+      <MobileBottomNav
+        cartCount={cartItems.reduce((acc, i) => acc + i.quantity, 0)}
+        onOpenCart={() => setIsCartOpen(true)}
+      />
 
       {/* Modal Tirada de Dado D20 / Recomendador */}
       <DiceRollerModal

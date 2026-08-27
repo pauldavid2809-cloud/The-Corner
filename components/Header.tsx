@@ -134,7 +134,7 @@ export function Header({
           {/* Botón de Comanda / Carrito */}
           <button
             onClick={onOpenCart}
-            className="relative flex items-center justify-center p-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-black font-black shadow-lg shadow-orange-500/30 transition-all hover:scale-105 active:scale-95"
+            className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-black font-black shadow-lg shadow-orange-500/25 transition-transform active:scale-90"
             aria-label="Abrir comanda de pedidos"
           >
             <ShoppingBag className="w-4 h-4 text-black" />
@@ -148,7 +148,7 @@ export function Header({
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800"
+            className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-zinc-900/90 border border-zinc-800 text-zinc-300 hover:text-white active:scale-90 transition-transform"
             aria-label="Abrir menú"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -156,29 +156,36 @@ export function Header({
         </div>
       </div>
 
-      {/* Mobile Dropdown */}
+      {/* Mobile Drawer (Animado con Glassmorphism) */}
       {mobileMenuOpen && (
-        <div className="lg:hidden mt-2 px-4 py-3 bg-[#0d0d14] border-b border-orange-500/20 space-y-2">
+        <div className="lg:hidden px-4 pt-3 pb-5 bg-black/95 backdrop-blur-2xl border-b border-orange-500/30 space-y-3 animate-in slide-in-from-top-3 duration-200 shadow-2xl">
           {/* Mobile Rate Ticker */}
-          <div className="p-2.5 rounded-xl bg-black/60 border border-white/5 flex items-center justify-between text-xs">
-            <span className="text-zinc-400 text-[11px]">Tasa Oficial BCV:</span>
-            <span className="font-mono text-emerald-400 font-bold">1$ = {bcvRate.toFixed(2)} Bs.</span>
+          <div className="p-3 rounded-2xl bg-zinc-900/90 border border-white/10 flex items-center justify-between text-xs">
+            <span className="text-zinc-400 font-bold flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+              Tasa Oficial BCV:
+            </span>
+            <span className="font-mono text-emerald-400 font-black text-sm">1$ = {bcvRate.toFixed(2)} Bs.</span>
           </div>
 
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            return (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2 text-sm font-bold text-zinc-300 hover:text-orange-400 hover:bg-orange-500/10 rounded-xl"
-              >
-                <Icon className="w-4 h-4 text-orange-400" />
-                {link.label}
-              </a>
-            );
-          })}
+          <div className="space-y-1 pt-1">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              return (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-black text-zinc-200 hover:text-orange-400 hover:bg-orange-500/10 active:bg-orange-500/20 active:scale-[0.98] rounded-2xl transition-all"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
+                    <Icon className="w-4 h-4 text-orange-400" />
+                  </div>
+                  <span>{link.label}</span>
+                </a>
+              );
+            })}
+          </div>
         </div>
       )}
     </header>

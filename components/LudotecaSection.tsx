@@ -73,17 +73,17 @@ export function LudotecaSection({ onSelectGame, onOpenDiceRoller }: Props) {
           </button>
         </div>
 
-        {/* Categorías */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        {/* Categorías con scroll suave en móviles */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
           {categories.map((cat) => {
             const isSelected = selectedCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider shrink-0 transition-all ${
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider shrink-0 transition-transform active:scale-95 ${
                   isSelected
-                    ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30 scale-105"
+                    ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30"
                     : "bg-zinc-900/90 text-zinc-300 border border-zinc-800 hover:border-zinc-600 hover:text-white"
                 }`}
               >

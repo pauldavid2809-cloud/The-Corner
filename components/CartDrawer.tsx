@@ -40,7 +40,7 @@ export function CartDrawer({
   onClearCart,
 }: Props) {
   const [orderType, setOrderType] = useState<"mesa" | "pickup" | "reserva">("mesa");
-  const [tableNumber, setTableNumber] = useState<string>("Mesa en Costa Verde");
+  const [tableNumber, setTableNumber] = useState<string>("Mesa");
   const [tipPercentage, setTipPercentage] = useState<number>(10);
   const [notes, setNotes] = useState<string>("");
 
@@ -57,7 +57,7 @@ export function CartDrawer({
   const totalDual = formatDualPrice(totalUSD, bcvRate);
 
   const handleCheckoutWhatsApp = () => {
-    let orderDetails = `🍔 *[THE CORNER COSTA VERDE] NUEVA COMANDA DIGITAL*\n\n`;
+    let orderDetails = `🍔 *[THE CORNER] NUEVA COMANDA DIGITAL*\n\n`;
     orderDetails += `*Ubicación / Tipo:* ${
       orderType === "mesa"
         ? `Consumo en Mesa (${tableNumber})`
@@ -82,7 +82,7 @@ export function CartDrawer({
       orderDetails += `\n*Notas:* ${notes.trim()}\n`;
     }
 
-    orderDetails += `\n_The Corner · C.C. Costa Verde Planta Alta._`;
+    orderDetails += `\n_The Corner · Drinks & Entertainment · Maracaibo._`;
 
     const url = `https://wa.me/${SITE_CONFIG.whatsappNumber}?text=${encodeURIComponent(
       orderDetails
