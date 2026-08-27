@@ -108,9 +108,39 @@ export default function HomePage() {
   };
 
   const handleGenerateQrTicket = (bookingData: BookingData) => {
-    const code = `CRN-${Math.floor(1000 + Math.random() * 9000)}`;
-    setActiveBooking(bookingData);
+    const code = bookingData.code || `CRN-${Math.floor(1000 + Math.random() * 9000)}`;
+    const fullBookingData = { ...bookingData, code };
+    setActiveBooking(fullBookingData);
     setIsTicketModalOpen(true);
+
+    // Guardar en localStorage para acceso instantáneo
+    if (typeof window !== "undefined") {
+      try {
+        const storedBooking = {
+          id: code,
+          clientName: bookingData.name,
+          phone: bookingData.phone,
+          planName: bookingData.plan.name,
+          tableNumber: "Por Asignar",
+          date: bookingData.date,
+          time: bookingData.time,
+          pax: bookingData.pax,
+          status: "confirmada",
+          totalUSD: bookingData.totalUSD,
+          notes: bookingData.notes,
+          paymentMethod: bookingData.paymentMethod,
+          paymentReference: bookingData.paymentReference,
+          paymentBank: bookingData.paymentBank,
+          paymentStatus: bookingData.paymentStatus,
+        };
+        localStorage.setItem("corner_last_booking", JSON.stringify(storedBooking));
+
+        const existing = JSON.parse(localStorage.getItem("corner_all_bookings") || "[]");
+        localStorage.setItem("corner_all_bookings", JSON.stringify([storedBooking, ...existing]));
+      } catch (e) {
+        console.error(e);
+      }
+    }
 
     // Guardar en Supabase en tiempo real con datos de pago y tasa BCV
     saveBookingToSupabase({

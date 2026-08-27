@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 
 export type BookingData = {
+  code: string;
   plan: {
     id: string;
     name: string;
@@ -114,7 +115,9 @@ export function BookingSection({
 
     setTimeout(() => {
       setIsSubmitting(false);
+      const generatedCode = `CRN-${Math.floor(1000 + Math.random() * 9000)}`;
       onGenerateQrTicket({
+        code: generatedCode,
         plan: {
           id: selectedPackage.id,
           name: selectedPackage.name,

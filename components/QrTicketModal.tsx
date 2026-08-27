@@ -35,9 +35,7 @@ export function QrTicketModal({
   bcvRate,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [ticketCode] = useState<string>(
-    () => `CRN-${Math.floor(1000 + Math.random() * 9000)}`
-  );
+  const ticketCode = booking?.code || "CRN-8492";
 
   useEffect(() => {
     if (isOpen && booking) {
