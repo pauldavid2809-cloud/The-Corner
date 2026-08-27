@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CurrencyMode } from "@/data/currencies";
+import { Logo } from "@/components/Logo";
 import {
   PartyPopper,
   ShoppingBag,
@@ -85,24 +86,9 @@ export function Header({
         {/* Logo Oficial The Corner */}
         <a
           href="#"
-          className="flex items-center gap-2.5 group focus:outline-none rounded-xl p-1"
+          className="group focus:outline-none rounded-2xl p-0.5"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF5500] to-[#E04B00] flex items-center justify-center text-black font-black text-xl shadow-lg shadow-orange-500/30 group-hover:scale-105 transition-transform">
-            +
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-black text-lg sm:text-xl tracking-tighter text-white uppercase group-hover:text-orange-400 transition-colors">
-                THE CORNER.
-              </span>
-              <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/40 uppercase">
-                Costa Verde
-              </span>
-            </div>
-            <p className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase hidden sm:block">
-              DRINKS & ENTERTAINMENT
-            </p>
-          </div>
+          <Logo withText size="md" />
         </a>
 
         {/* Desktop Navigation Links */}

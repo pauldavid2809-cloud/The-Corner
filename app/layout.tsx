@@ -3,40 +3,40 @@ import "./globals.css";
 import { SITE_CONFIG } from "@/lib/config";
 
 export const viewport: Viewport = {
-  themeColor: "#09090D",
+  themeColor: "#09090E",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
 };
 
 export const metadata: Metadata = {
-  title: `${SITE_CONFIG.name} — Juegos de Mesa, Tragos Mágicos & Lounge`,
+  title: `${SITE_CONFIG.officialTitle} — C.C. Costa Verde, Maracaibo`,
   description: SITE_CONFIG.description,
   keywords: [
     "The Corner Maracaibo",
+    "The Corner Costa Verde",
+    "Narguiles Maracaibo",
+    "Beerpong Maracaibo",
+    "Mario Kart Maracaibo",
     "Juegos de mesa Maracaibo",
-    "Bar gamer Maracaibo",
-    "Pociones mágicas",
-    "Ludoteca Maracaibo",
-    "Stand up comedy Maracaibo",
-    "Eventos privados Maracaibo",
-    "Calle 72",
+    "Paquetes de cumpleaños Maracaibo",
+    "Costa Verde Planta Alta",
   ],
   authors: [{ name: "The Corner" }, { name: "ByteBridge" }],
-  creator: "ByteBridge",
+  creator: "The Corner & ByteBridge",
   openGraph: {
-    title: `${SITE_CONFIG.name} | WebApp Oficial & Reservas`,
+    title: `${SITE_CONFIG.officialTitle} | C.C. Costa Verde`,
     description: SITE_CONFIG.tagline,
-    url: "https://thecorner-mcbo.vercel.app",
+    url: "https://the-corner-webapp.vercel.app",
     siteName: SITE_CONFIG.name,
     locale: "es_VE",
     type: "website",
     images: [
       {
-        url: "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?auto=format&fit=crop&w=1200&q=80",
-        width: 1200,
-        height: 630,
-        alt: "The Corner — Bar de Juegos de Mesa y Pociones",
+        url: "/logo.png",
+        width: 800,
+        height: 800,
+        alt: "The Corner Drinks & Entertainment",
       },
     ],
   },
@@ -44,12 +44,11 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_CONFIG.name,
     description: SITE_CONFIG.description,
-    images: [
-      "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?auto=format&fit=crop&w=1200&q=80",
-    ],
+    images: ["/logo.png"],
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logo.png",
+    apple: "/logo.png",
   },
 };
 
@@ -60,7 +59,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="dark scroll-smooth">
-      <body className="min-h-screen bg-[#09090D] text-slate-100 antialiased selection:bg-orange-500 selection:text-white">
+      <body className="min-h-screen bg-[#09090E] text-slate-100 antialiased selection:bg-orange-500 selection:text-black">
         {children}
       </body>
     </html>

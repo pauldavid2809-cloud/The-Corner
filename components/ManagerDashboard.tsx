@@ -12,6 +12,7 @@ import {
   PaymentStatus,
 } from "@/data/cornerData";
 import { formatPrice, formatDualPrice } from "@/data/currencies";
+import { Logo } from "@/components/Logo";
 import {
   ShieldCheck,
   TrendingUp,
@@ -237,24 +238,15 @@ export function ManagerDashboard({
           <div className="flex items-center gap-4">
             <button
               onClick={onExitManagerMode}
-              className="p-2.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all flex items-center gap-2 text-xs font-bold"
+              className="p-2.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all flex items-center gap-2 text-xs font-bold shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Volver a la WebApp</span>
             </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black uppercase text-white tracking-tight">
-                  Panel de Administración · The Corner
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase">
-                  En Vivo
-                </span>
-              </div>
-              <p className="text-xs text-zinc-400">
-                Gestión de Pagos, Conciliación, Mesas, Menú y Ludoteca en C.C. Costa Verde
-              </p>
-            </div>
+            <Logo size="sm" withText />
+            <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase">
+              Admin & Conciliación
+            </span>
           </div>
 
           <div className="flex items-center gap-3">

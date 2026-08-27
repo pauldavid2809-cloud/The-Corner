@@ -7,6 +7,7 @@ import confetti from "canvas-confetti";
 import { BookingData } from "./BookingSection";
 import { SITE_CONFIG } from "@/lib/config";
 import { formatDualPrice } from "@/data/currencies";
+import { Logo } from "@/components/Logo";
 import {
   X,
   CheckCircle2,
@@ -151,19 +152,7 @@ export function QrTicketModal({
           <div className="overflow-hidden rounded-2xl border border-orange-500/30 bg-gradient-to-b from-zinc-900 via-zinc-950 to-black p-5 shadow-inner space-y-4">
             {/* Header del Ticket */}
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-black font-black">
-                  +
-                </div>
-                <div>
-                  <span className="font-black text-sm text-white uppercase block leading-none">
-                    THE CORNER.
-                  </span>
-                  <span className="text-[10px] text-orange-400 font-bold">
-                    C.C. Costa Verde (Planta Alta)
-                  </span>
-                </div>
-              </div>
+              <Logo withText size="sm" />
 
               <div className="text-right">
                 <span className="text-[10px] uppercase font-bold text-zinc-400 block">

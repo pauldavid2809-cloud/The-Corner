@@ -1,6 +1,7 @@
 "use client";
 
 import { SITE_CONFIG } from "@/lib/config";
+import { Logo } from "@/components/Logo";
 import {
   PartyPopper,
   Instagram,
@@ -16,19 +17,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 pb-10 border-b border-white/5">
         {/* Columna 1: Brand & Bio */}
         <div className="md:col-span-5 space-y-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-500 flex items-center justify-center text-black font-black text-lg">
-              +
-            </div>
-            <div>
-              <span className="font-black text-lg text-white uppercase tracking-tight block">
-                THE CORNER.
-              </span>
-              <span className="text-[9px] font-bold text-orange-400 tracking-widest uppercase">
-                DRINKS & ENTERTAINMENT
-              </span>
-            </div>
-          </div>
+          <Logo withText size="md" />
 
           <p className="text-zinc-400 text-xs leading-relaxed max-w-sm">
             {SITE_CONFIG.description}
