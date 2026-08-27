@@ -4,16 +4,13 @@ import { useState } from "react";
 import { MenuItem, MENU_ITEMS } from "@/data/cornerData";
 import { CurrencyMode, formatPrice } from "@/data/currencies";
 import {
-  Sparkles,
   Flame,
   Plus,
   Check,
-  ShoppingBag,
-  Info,
   Beer,
   Utensils,
-  Coffee,
-  IceCream,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 
 type Props = {
@@ -23,15 +20,15 @@ type Props = {
 };
 
 export function MenuSection({ currency, bcvRate, onAddToCart }: Props) {
-  const [activeCategory, setActiveCategory] = useState<string>("pociones");
+  const [activeCategory, setActiveCategory] = useState<string>("combos-promos");
   const [addedItemId, setAddedItemId] = useState<string | null>(null);
 
   const categories = [
-    { id: "pociones", label: "Pociones & Tragos UV", icon: Sparkles },
-    { id: "cervezas-shots", label: "Cervezas & Baldes", icon: Beer },
-    { id: "munchies", label: "Burgers & Munchies", icon: Utensils },
-    { id: "mocktails-cafe", label: "Sin Alcohol & Café", icon: Coffee },
-    { id: "postres", label: "Postres Gamer", icon: IceCream },
+    { id: "combos-promos", label: "🔥 Promos & Baldes 10$", icon: Zap },
+    { id: "narguiles-shots", label: "💨 Narguiles & Shots", icon: Sparkles },
+    { id: "baldes-cervezas", label: "🍺 Baldes de Cerveza", icon: Beer },
+    { id: "cocteles-botellas", label: "🍸 Cócteles & Botellas", icon: Flame },
+    { id: "comida-munchies", label: "🍔 Burgers, Perros & Munchies", icon: Utensils },
   ];
 
   const currentItems = MENU_ITEMS.filter(
@@ -47,31 +44,20 @@ export function MenuSection({ currency, bcvRate, onAddToCart }: Props) {
   };
 
   return (
-    <section id="menu" className="scroll-mt-20 py-20 px-4 sm:px-6 bg-[#09090E] border-t border-white/5">
+    <section id="menu" className="scroll-mt-20 py-20 px-4 sm:px-6 bg-[#09090e] border-t border-white/5">
       <div className="max-w-7xl mx-auto space-y-10">
         {/* Encabezado */}
         <div className="text-center space-y-3 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-wider">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            Carta & Mixología Temática
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-black uppercase tracking-wider">
+            <Flame className="w-4 h-4 text-orange-400" />
+            CARTA & PROMOS DESTACADAS
           </div>
-          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-            Pociones Mágicas, Tragos & Munchies
+          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight uppercase">
+            Narguiles, Baldes 10$ & Munchies
           </h2>
-          <p className="text-sm sm:text-base text-zinc-400">
-            Cócteles que brillan bajo luz negra UV, hamburguesas de carne Angus certificada, volcanes de nachos para compartir y bebidas sin alcohol.
+          <p className="text-sm sm:text-base text-zinc-300">
+            Baldes de 10 cervezas a $10, sesiones de narguile con carbón de coco, 2 perros por $5, 3 burgers por $15 y shots Power Rangers.
           </p>
-
-          {/* Banner de Moneda */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-zinc-900/90 border border-white/10 text-xs text-zinc-300">
-            <Info className="w-3.5 h-3.5 text-orange-400" />
-            <span>
-              Precios mostrados en{" "}
-              <strong className="text-white">
-                {currency === "USD" ? "Dólares ($ USD)" : "Bolívares (VES al cambio BCV)"}
-              </strong>
-            </span>
-          </div>
         </div>
 
         {/* Categorías / Tabs */}
@@ -83,10 +69,10 @@ export function MenuSection({ currency, bcvRate, onAddToCart }: Props) {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shrink-0 transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider shrink-0 transition-all ${
                   isSelected
                     ? "bg-gradient-to-r from-orange-500 to-amber-500 text-black shadow-lg shadow-orange-500/25 scale-105"
-                    : "bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-white hover:border-zinc-600"
+                    : "bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-white hover:border-zinc-700"
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -96,37 +82,31 @@ export function MenuSection({ currency, bcvRate, onAddToCart }: Props) {
           })}
         </div>
 
-        {/* Grid de Ítems del Menú */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Grid de Ítems */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {currentItems.map((item) => {
             const isAdded = addedItemId === item.id;
             return (
               <div
                 key={item.id}
-                className="rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800/80 hover:border-amber-500/40 p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/5 group"
+                className="rounded-3xl bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800/80 hover:border-orange-500/40 p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-orange-500/5 group"
               >
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {/* Badge & Popularidad */}
                   <div className="flex items-center justify-between gap-2">
                     {item.badge ? (
-                      <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-black shadow-sm">
                         {item.badge}
                       </span>
                     ) : (
                       <span className="text-[10px] font-bold uppercase text-zinc-500">
-                        The Corner
-                      </span>
-                    )}
-
-                    {item.spicy && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 flex items-center gap-1">
-                        <Flame className="w-3 h-3" /> Flameado
+                        THE CORNER
                       </span>
                     )}
                   </div>
 
-                  {/* Nombre del Plato / Bebida */}
-                  <h3 className="text-lg font-black text-white group-hover:text-amber-400 transition-colors leading-snug">
+                  {/* Nombre */}
+                  <h3 className="text-base sm:text-lg font-black text-white group-hover:text-orange-400 transition-colors leading-snug">
                     {item.name}
                   </h3>
 
@@ -141,7 +121,7 @@ export function MenuSection({ currency, bcvRate, onAddToCart }: Props) {
                       {item.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="text-[10px] font-medium px-2 py-0.5 rounded bg-zinc-800 text-zinc-300"
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-zinc-800 text-zinc-300"
                         >
                           {tag}
                         </span>
@@ -150,10 +130,10 @@ export function MenuSection({ currency, bcvRate, onAddToCart }: Props) {
                   )}
                 </div>
 
-                {/* Precio y Botón Agregar */}
+                {/* Precio y Botón Añadir */}
                 <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] text-zinc-500 uppercase block font-semibold">
+                    <span className="text-[10px] text-zinc-500 uppercase block font-bold">
                       Precio
                     </span>
                     <span className="text-lg font-black text-white">
@@ -163,7 +143,7 @@ export function MenuSection({ currency, bcvRate, onAddToCart }: Props) {
 
                   <button
                     onClick={() => handleAdd(item)}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black transition-all ${
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all ${
                       isAdded
                         ? "bg-emerald-500 text-black shadow-md shadow-emerald-500/30 scale-105"
                         : "bg-orange-500 hover:bg-orange-600 text-black shadow-md shadow-orange-500/20 hover:scale-105 active:scale-95"
@@ -177,7 +157,7 @@ export function MenuSection({ currency, bcvRate, onAddToCart }: Props) {
                     ) : (
                       <>
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Añadir</span>
+                        <span>Pedir</span>
                       </>
                     )}
                   </button>

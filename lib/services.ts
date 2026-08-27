@@ -6,12 +6,94 @@ import {
   BOARD_GAMES,
   MENU_ITEMS,
   INITIAL_LIVE_BOOKINGS,
+  PaymentMethod,
+  PaymentStatus,
 } from "@/data/cornerData";
-import { DEFAULT_BCV_RATE } from "@/data/currencies";
+import { DEFAULT_BCV_RATE, DEFAULT_EUR_BCV_RATE, ExchangeRates } from "@/data/currencies";
 
 /**
  * =========================================================================
- * SERVICIOS DE RESERVAS / BOOKINGS
+ * SERVICIOS DE TASAS BCV EN VIVO (DÓLAR Y EURO)
+ * =========================================================================
+ */
+
+export async function fetchLiveExchangeRates(): Promise<ExchangeRates> {
+  try {
+    const res = await fetch("/api/bcv", { cache: "no-store" });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        usd: Number(data.usd) || DEFAULT_BCV_RATE,
+        eur: Number(data.eur) || DEFAULT_EUR_BCV_RATE,
+        lastUpdated: data.lastUpdated,
+      };
+    }
+  } catch (err) {
+    console.warn("No se pudo consultar /api/bcv directamente:", err);
+  }
+
+  return {
+    usd: DEFAULT_BCV_RATE,
+    eur: DEFAULT_EUR_BCV_RATE,
+    lastUpdated: new Date().toISOString(),
+  };
+}
+
+export async function fetchBcvRateFromSupabase(): Promise<ExchangeRates> {
+  if (!isSupabaseConfigured || !supabase) {
+    return fetchLiveExchangeRates();
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "bcv_rate")
+      .single();
+
+    if (error || !data) {
+      return fetchLiveExchangeRates();
+    }
+
+    const val = data.value;
+    return {
+      usd: Number(val?.rate || val?.usd) || DEFAULT_BCV_RATE,
+      eur: Number(val?.eur) || DEFAULT_EUR_BCV_RATE,
+      lastUpdated: val?.updated_at,
+    };
+  } catch (err) {
+    return fetchLiveExchangeRates();
+  }
+}
+
+export async function updateExchangeRatesInSupabase(rates: {
+  usd: number;
+  eur: number;
+}): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return true;
+
+  try {
+    const { error } = await supabase.from("app_config").upsert([
+      {
+        key: "bcv_rate",
+        value: {
+          rate: rates.usd,
+          usd: rates.usd,
+          eur: rates.eur,
+          updated_at: new Date().toISOString(),
+        },
+      },
+    ]);
+    return !error;
+  } catch (err) {
+    console.error("Error updating exchange rates:", err);
+    return false;
+  }
+}
+
+/**
+ * =========================================================================
+ * SERVICIOS DE RESERVAS Y PAGOS / BOOKINGS
  * =========================================================================
  */
 
@@ -27,7 +109,6 @@ export async function fetchBookingsFromSupabase(): Promise<LiveBooking[]> {
       .order("created_at", { ascending: false });
 
     if (error || !data || data.length === 0) {
-      console.warn("Supabase bookings fallback:", error?.message);
       return INITIAL_LIVE_BOOKINGS;
     }
 
@@ -44,6 +125,11 @@ export async function fetchBookingsFromSupabase(): Promise<LiveBooking[]> {
       totalUSD: Number(b.total_usd),
       notes: b.notes,
       gameInPlay: b.game_in_play,
+      paymentMethod: (b.payment_method as PaymentMethod) || "pago_movil",
+      paymentReference: b.payment_reference || undefined,
+      paymentBank: b.payment_bank || undefined,
+      paymentStatus: (b.payment_status as PaymentStatus) || "pendiente",
+      paymentAmountVES: Number(b.total_ves) || undefined,
     }));
   } catch (err) {
     console.error("Error fetching bookings:", err);
@@ -63,9 +149,13 @@ export async function saveBookingToSupabase(booking: {
   totalUSD: number;
   totalVES: number;
   notes?: string;
+  paymentMethod: PaymentMethod;
+  paymentReference?: string;
+  paymentBank?: string;
+  paymentStatus?: PaymentStatus;
 }): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {
-    return true; // Local success
+    return true;
   }
 
   try {
@@ -84,42 +174,48 @@ export async function saveBookingToSupabase(booking: {
         total_usd: booking.totalUSD,
         total_ves: booking.totalVES,
         notes: booking.notes || null,
+        payment_method: booking.paymentMethod,
+        payment_reference: booking.paymentReference || null,
+        payment_bank: booking.paymentBank || null,
+        payment_status: booking.paymentStatus || "pendiente",
       },
     ]);
 
-    if (error) {
-      console.error("Error saving booking to Supabase:", error);
-      return false;
-    }
-    return true;
+    return !error;
   } catch (err) {
     console.error("Supabase booking insert exception:", err);
     return false;
   }
 }
 
-export async function updateBookingStatusInSupabase(
+export async function updatePaymentStatusInSupabase(
   codeOrId: string,
-  newStatus: string
+  paymentStatus: PaymentStatus,
+  approvedBy?: string
 ): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return true;
 
   try {
     const { error } = await supabase
       .from("bookings")
-      .update({ status: newStatus })
+      .update({
+        payment_status: paymentStatus,
+        status: paymentStatus === "aprobado" ? "confirmada" : "pendiente",
+        approved_by: approvedBy || "Gerente General",
+        approved_at: new Date().toISOString(),
+      })
       .or(`code.eq.${codeOrId},id.eq.${codeOrId}`);
 
     return !error;
   } catch (err) {
-    console.error("Error updating status:", err);
+    console.error("Error updating payment status in Supabase:", err);
     return false;
   }
 }
 
 /**
  * =========================================================================
- * SERVICIOS DE MENÚ & POCIONES
+ * SERVICIOS DE MENÚ & PROMOS
  * =========================================================================
  */
 
@@ -193,7 +289,7 @@ export async function deleteMenuItemFromSupabase(id: string): Promise<boolean> {
 
 /**
  * =========================================================================
- * SERVICIOS DE LUDOTECA & JUEGOS DE MESA
+ * SERVICIOS DE JUEGOS Y ENTRETENIMIENTO
  * =========================================================================
  */
 
@@ -257,51 +353,6 @@ export async function saveGameToSupabase(game: BoardGame): Promise<boolean> {
     return !error;
   } catch (err) {
     console.error("Error saving board game:", err);
-    return false;
-  }
-}
-
-/**
- * =========================================================================
- * SERVICIOS DE TASA BCV & CONFIGURACIÓN
- * =========================================================================
- */
-
-export async function fetchBcvRateFromSupabase(): Promise<number> {
-  if (!isSupabaseConfigured || !supabase) {
-    return DEFAULT_BCV_RATE;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("app_config")
-      .select("value")
-      .eq("key", "bcv_rate")
-      .single();
-
-    if (error || !data) {
-      return DEFAULT_BCV_RATE;
-    }
-
-    return Number(data.value?.rate) || DEFAULT_BCV_RATE;
-  } catch (err) {
-    return DEFAULT_BCV_RATE;
-  }
-}
-
-export async function updateBcvRateInSupabase(rate: number): Promise<boolean> {
-  if (!isSupabaseConfigured || !supabase) return true;
-
-  try {
-    const { error } = await supabase.from("app_config").upsert([
-      {
-        key: "bcv_rate",
-        value: { rate, updated_at: new Date().toISOString() },
-      },
-    ]);
-    return !error;
-  } catch (err) {
-    console.error("Error updating BCV rate:", err);
     return false;
   }
 }

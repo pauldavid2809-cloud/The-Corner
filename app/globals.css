@@ -1,69 +1,82 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --bg-dark: #09090d;
-    --bg-card: rgba(18, 18, 24, 0.85);
-    --primary-orange: #f97316;
-    --primary-gold: #eab308;
-    --magic-blue: #38bdf8;
-    --magic-purple: #a855f7;
-  }
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
-  body {
-    background-color: var(--bg-dark);
-    color: #f8fafc;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    overflow-x: hidden;
-  }
-
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #09090d;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #27272a;
-    border-radius: 4px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #f97316;
-  }
+  --corner-orange: #ff5500;
+  --corner-orange-hover: #e04b00;
+  --corner-purple: #8b5cf6;
+  --corner-pink: #ec4899;
+  --corner-gold: #f59e0b;
+  --corner-dark: #09090e;
 }
 
-/* Glow effects */
-.glow-orange {
-  box-shadow: 0 0 25px -5px rgba(249, 115, 22, 0.35);
+body {
+  background-color: #09090e;
+  color: #f8fafc;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
 }
 
-.glow-orange-lg {
-  box-shadow: 0 0 50px -10px rgba(249, 115, 22, 0.5);
+/* Tactile Button Feedback (Emil Kowalski Design Principle) */
+button,
+a.button-tactile {
+  transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
 }
 
-.glow-gold {
-  box-shadow: 0 0 25px -5px rgba(234, 179, 8, 0.35);
+button:active,
+a.button-tactile:active {
+  transform: scale(0.97) !important;
 }
 
-.glow-blue {
-  box-shadow: 0 0 25px -5px rgba(56, 189, 248, 0.35);
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #09090e;
+}
+::-webkit-scrollbar-thumb {
+  background: #22222b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ff5500;
 }
 
-.text-gradient-orange {
-  background: linear-gradient(135deg, #f97316 0%, #fb923c 50%, #fde047 100%);
+/* Authentic The Corner Sticker Badges & Glows */
+.sticker-badge {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transform: rotate(-2deg);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.glow-corner-orange {
+  box-shadow: 0 0 30px -5px rgba(255, 85, 0, 0.35);
+}
+
+.glow-corner-purple {
+  box-shadow: 0 0 30px -5px rgba(139, 92, 246, 0.35);
+}
+
+.text-gradient-corner {
+  background: linear-gradient(135deg, #ff5500 0%, #ff8800 50%, #facc15 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.text-gradient-magic {
-  background: linear-gradient(135deg, #38bdf8 0%, #a855f7 50%, #f472b6 100%);
+.text-gradient-party {
+  background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #38bdf8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.bg-radial-grid {
-  background-image: radial-gradient(rgba(249, 115, 22, 0.08) 1px, transparent 1px);
-  background-size: 24px 24px;
+.bg-radial-mesh {
+  background-image: radial-gradient(rgba(255, 85, 0, 0.09) 1px, transparent 1px);
+  background-size: 28px 28px;
 }

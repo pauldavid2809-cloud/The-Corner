@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CurrencyMode, DEFAULT_BCV_RATE } from "@/data/currencies";
-import { BoardGame, MenuItem, WeeklyEvent, BOARD_GAMES, MENU_ITEMS } from "@/data/cornerData";
+import {
+  CurrencyMode,
+  DEFAULT_BCV_RATE,
+  DEFAULT_EUR_BCV_RATE,
+} from "@/data/currencies";
+import { BoardGame, MenuItem, WeeklyEvent } from "@/data/cornerData";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { LudotecaSection } from "@/components/LudotecaSection";
@@ -13,20 +17,18 @@ import { BookingSection, BookingData } from "@/components/BookingSection";
 import { QrTicketModal } from "@/components/QrTicketModal";
 import { CartDrawer, CartItem } from "@/components/CartDrawer";
 import { EventsSection } from "@/components/EventsSection";
-import { ManagerDashboard } from "@/components/ManagerDashboard";
 import { LocationSection } from "@/components/LocationSection";
 import { Footer } from "@/components/Footer";
 import {
   saveBookingToSupabase,
   fetchBcvRateFromSupabase,
-  fetchMenuFromSupabase,
-  fetchGamesFromSupabase,
+  fetchLiveExchangeRates,
 } from "@/lib/services";
 
 export default function HomePage() {
   const [currency, setCurrency] = useState<CurrencyMode>("USD");
-  const [bcvRate, setBcvRate] = useState<number>(DEFAULT_BCV_RATE);
-  const [isManagerMode, setIsManagerMode] = useState<boolean>(false);
+  const [usdRate, setUsdRate] = useState<number>(DEFAULT_BCV_RATE);
+  const [eurRate, setEurRate] = useState<number>(DEFAULT_EUR_BCV_RATE);
 
   // Carrito / Comanda
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -39,14 +41,9 @@ export default function HomePage() {
   const [activeBooking, setActiveBooking] = useState<BookingData | null>(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState<boolean>(false);
 
-  // Carga inicial de Supabase y query params
+  // Carga inicial de Tasas BCV en Vivo (Dólar & Euro)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("admin") === "true" || params.get("gerente") === "true") {
-        setIsManagerMode(true);
-      }
-
       // Cargar carrito de localStorage
       try {
         const savedCart = localStorage.getItem("corner_cart");
@@ -57,9 +54,16 @@ export default function HomePage() {
         console.error(e);
       }
 
-      // Sincronizar tasa BCV desde Supabase
-      fetchBcvRateFromSupabase().then((rate) => {
-        if (rate) setBcvRate(rate);
+      // Consultar API en vivo de Dólar y Euro BCV
+      fetchLiveExchangeRates().then((rates) => {
+        if (rates.usd) setUsdRate(rates.usd);
+        if (rates.eur) setEurRate(rates.eur);
+      });
+
+      // Consultar también Supabase
+      fetchBcvRateFromSupabase().then((rates) => {
+        if (rates?.usd) setUsdRate(rates.usd);
+        if (rates?.eur) setEurRate(rates.eur);
       });
     }
   }, []);
@@ -74,15 +78,6 @@ export default function HomePage() {
       }
     }
   }, [cartItems]);
-
-  const toggleCurrency = () => {
-    setCurrency((prev) => (prev === "USD" ? "VES" : "USD"));
-  };
-
-  const toggleManagerMode = () => {
-    setIsManagerMode((prev) => !prev);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   const handleAddToCart = (item: MenuItem) => {
     setCartItems((prev) => {
@@ -124,7 +119,7 @@ export default function HomePage() {
     setActiveBooking(bookingData);
     setIsTicketModalOpen(true);
 
-    // Guardar en Supabase en tiempo real
+    // Guardar en Supabase en tiempo real con datos de pago y tasa BCV
     saveBookingToSupabase({
       code,
       clientName: bookingData.name,
@@ -135,13 +130,17 @@ export default function HomePage() {
       time: bookingData.time,
       pax: bookingData.pax,
       totalUSD: bookingData.totalUSD,
-      totalVES: bookingData.totalUSD * bcvRate,
+      totalVES: bookingData.totalUSD * usdRate,
       notes: bookingData.notes,
+      paymentMethod: bookingData.paymentMethod,
+      paymentReference: bookingData.paymentReference,
+      paymentBank: bookingData.paymentBank,
+      paymentStatus: bookingData.paymentStatus,
     });
   };
 
   const handleSelectEventToBook = (event: WeeklyEvent) => {
-    const bookingElement = document.getElementById("reservas");
+    const bookingElement = document.getElementById("paquetes");
     if (bookingElement) {
       bookingElement.scrollIntoView({ behavior: "smooth" });
     }
@@ -157,67 +156,56 @@ export default function HomePage() {
   const totalCartCount = cartItems.reduce((acc, curr) => acc + curr.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-[#09090D] text-slate-100 selection:bg-orange-500 selection:text-black">
-      {/* Cabecera Principal */}
+    <div className="min-h-screen bg-[#09090E] text-slate-100 selection:bg-orange-500 selection:text-black">
+      {/* Cabecera Principal (Cliente) */}
       <Header
         currency={currency}
-        onToggleCurrency={toggleCurrency}
-        bcvRate={bcvRate}
+        onSelectCurrency={(mode) => setCurrency(mode)}
+        usdRate={usdRate}
+        eurRate={eurRate}
         cartCount={totalCartCount}
         onOpenCart={() => setIsCartOpen(true)}
-        isManagerMode={isManagerMode}
-        onToggleManagerMode={toggleManagerMode}
         onOpenDiceRoller={() => setIsDiceRollerOpen(true)}
       />
 
-      {isManagerMode ? (
-        /* Panel del Gerente */
-        <ManagerDashboard
-          onExitManagerMode={() => setIsManagerMode(false)}
-          bcvRate={bcvRate}
-          onUpdateBcvRate={(newRate) => setBcvRate(newRate)}
+      {/* Vista Principal de Clientes */}
+      <main>
+        {/* 1. Hero Section con estética oficial de The Corner */}
+        <Hero
+          onScrollToPackages={() => scrollTo("paquetes")}
+          onScrollToMenu={() => scrollTo("menu")}
+          onScrollToGames={() => scrollTo("juegos")}
         />
-      ) : (
-        /* Vista Principal de Clientes */
-        <main>
-          {/* 1. Hero Section */}
-          <Hero
-            onScrollToLudoteca={() => scrollTo("ludoteca")}
-            onScrollToMenu={() => scrollTo("menu")}
-            onScrollToBooking={() => scrollTo("reservas")}
-            onOpenDiceRoller={() => setIsDiceRollerOpen(true)}
-          />
 
-          {/* 2. Ludoteca Digital Interactiva (50+ Juegos de Mesa) */}
-          <LudotecaSection
-            onSelectGame={handleSelectGame}
-            onOpenDiceRoller={() => setIsDiceRollerOpen(true)}
-          />
+        {/* 2. Paquetes de Celebración & Cumpleaños con Gestión de Pagos */}
+        <BookingSection
+          currency={currency}
+          bcvRate={usdRate}
+          onGenerateQrTicket={handleGenerateQrTicket}
+        />
 
-          {/* 3. Carta & Mixología Temática (Menú de Pociones & Munchies) */}
-          <MenuSection
-            currency={currency}
-            bcvRate={bcvRate}
-            onAddToCart={handleAddToCart}
-          />
+        {/* 3. Menú Oficial: Promos Baldes 10$, Narguiles, 2 Perros $5, 3 Burgers $15 */}
+        <MenuSection
+          currency={currency}
+          bcvRate={usdRate}
+          onAddToCart={handleAddToCart}
+        />
 
-          {/* 4. Módulo de Reservas & Pases VIP con QR */}
-          <BookingSection
-            currency={currency}
-            bcvRate={bcvRate}
-            onGenerateQrTicket={handleGenerateQrTicket}
-          />
+        {/* 4. Entretenimiento: Mario Kart en Pantalla Gigante, Beerpong & Juegos */}
+        <LudotecaSection
+          onSelectGame={handleSelectGame}
+          onOpenDiceRoller={() => setIsDiceRollerOpen(true)}
+        />
 
-          {/* 5. Agenda de Eventos & Torneos Semanales */}
-          <EventsSection onSelectEventToBook={handleSelectEventToBook} />
+        {/* 5. Cronograma Semanal & Noches Temáticas (Despecho, Happy Hour 2x1, Watch Parties) */}
+        <EventsSection onSelectEventToBook={handleSelectEventToBook} />
 
-          {/* 6. Ubicación & Contacto */}
-          <LocationSection />
+        {/* 6. Ubicación: C.C. Costa Verde Planta Alta */}
+        <LocationSection />
 
-          {/* Footer */}
-          <Footer onToggleManagerMode={toggleManagerMode} />
-        </main>
-      )}
+        {/* Footer Oficial */}
+        <Footer />
+      </main>
 
       {/* Modal Tirada de Dado D20 / Recomendador */}
       <DiceRollerModal
@@ -241,7 +229,7 @@ export default function HomePage() {
         isOpen={isTicketModalOpen}
         onClose={() => setIsTicketModalOpen(false)}
         booking={activeBooking}
-        bcvRate={bcvRate}
+        bcvRate={usdRate}
       />
 
       {/* Drawer de la Comanda Digital */}
@@ -250,7 +238,7 @@ export default function HomePage() {
         onClose={() => setIsCartOpen(false)}
         items={cartItems}
         currency={currency}
-        bcvRate={bcvRate}
+        bcvRate={usdRate}
         onUpdateQuantity={handleUpdateQuantity}
         onClearCart={handleClearCart}
       />

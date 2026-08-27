@@ -8,7 +8,7 @@ import {
   Sparkles,
   PartyPopper,
   Mic2,
-  Dice6,
+  Beer,
   Gift,
   ArrowRight,
 } from "lucide-react";
@@ -25,11 +25,11 @@ export function EventsSection({ onSelectEventToBook }: Props) {
       case "Trophy":
         return <Trophy className="w-6 h-6 text-amber-400" />;
       case "Sparkles":
-        return <Sparkles className="w-6 h-6 text-sky-400" />;
+        return <Sparkles className="w-6 h-6 text-pink-400" />;
       case "PartyPopper":
-        return <PartyPopper className="w-6 h-6 text-rose-400" />;
-      case "Dice6":
-        return <Dice6 className="w-6 h-6 text-purple-400" />;
+        return <PartyPopper className="w-6 h-6 text-purple-400" />;
+      case "Beer":
+        return <Beer className="w-6 h-6 text-yellow-400" />;
       default:
         return <Calendar className="w-6 h-6 text-orange-400" />;
     }
@@ -40,15 +40,15 @@ export function EventsSection({ onSelectEventToBook }: Props) {
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Encabezado */}
         <div className="text-center space-y-3 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-bold uppercase tracking-wider">
-            <Trophy className="w-4 h-4" />
-            Agenda & Torneos Semanales
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-400 text-xs font-black uppercase tracking-wider">
+            <PartyPopper className="w-4 h-4" />
+            CRONOGRAMA DE LA SEMANA
           </div>
-          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-            Noches Temáticas de The Corner
+          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight uppercase">
+            Noches Temáticas & Watch Parties
           </h2>
-          <p className="text-sm sm:text-base text-zinc-400">
-            Cada noche tiene una vibra diferente: comedia en vivo los miércoles, torneos de estrategia los jueves, fiestas UV los viernes y rol D&D los domingos.
+          <p className="text-sm sm:text-base text-zinc-300">
+            Baldes a $10 los miércoles y domingos, noches de despecho los jueves, Happy Hour 2x1 los viernes y watch parties en pantalla gigante.
           </p>
         </div>
 
@@ -57,7 +57,7 @@ export function EventsSection({ onSelectEventToBook }: Props) {
           {WEEKLY_EVENTS.map((evt) => (
             <div
               key={evt.id}
-              className="rounded-3xl bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800/80 hover:border-orange-500/40 p-6 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-orange-500/5 group relative overflow-hidden"
+              className="rounded-3xl bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800/80 hover:border-pink-500/40 p-6 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-pink-500/5 group relative overflow-hidden"
             >
               <div className="space-y-4">
                 {/* Cabecera del día */}
@@ -77,17 +77,17 @@ export function EventsSection({ onSelectEventToBook }: Props) {
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
+                  <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-zinc-800 text-pink-300 border border-zinc-700">
                     {evt.badge}
                   </span>
                 </div>
 
                 {/* Título & Subtítulo */}
                 <div className="space-y-1">
-                  <h3 className="text-lg font-black text-white group-hover:text-orange-400 transition-colors">
+                  <h3 className="text-lg font-black text-white group-hover:text-pink-300 transition-colors leading-snug">
                     {evt.title}
                   </h3>
-                  <p className="text-xs font-medium text-amber-300/90">
+                  <p className="text-xs font-bold text-amber-300">
                     {evt.subtitle}
                   </p>
                 </div>
@@ -97,20 +97,20 @@ export function EventsSection({ onSelectEventToBook }: Props) {
                   {evt.description}
                 </p>
 
-                {/* Promo / Perk Box */}
-                <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-start gap-2 text-xs text-orange-200">
+                {/* Promo Box */}
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-orange-500/10 to-pink-500/10 border border-orange-500/20 flex items-start gap-2 text-xs text-orange-200">
                   <Gift className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
-                  <span className="text-[11px] font-medium leading-snug">
+                  <span className="text-[11px] font-bold leading-snug">
                     {evt.perk}
                   </span>
                 </div>
               </div>
 
-              {/* Botón Reservar para este evento */}
+              {/* Botón Reservar */}
               <div className="mt-6 pt-4 border-t border-white/5">
                 <button
                   onClick={() => onSelectEventToBook(evt)}
-                  className="w-full py-2.5 px-4 rounded-xl bg-zinc-800 group-hover:bg-orange-500 text-white group-hover:text-black font-extrabold text-xs transition-all flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 px-4 rounded-xl bg-zinc-800 group-hover:bg-gradient-to-r group-hover:from-orange-500 group-hover:to-pink-500 text-white group-hover:text-black font-black text-xs transition-all flex items-center justify-center gap-1.5"
                 >
                   <span>Reservar Mesa para {evt.day}</span>
                   <ArrowRight className="w-3.5 h-3.5" />

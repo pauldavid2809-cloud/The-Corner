@@ -12,9 +12,6 @@ import {
   Plus,
   Minus,
   MessageCircle,
-  Sparkles,
-  UtensilsCrossed,
-  Receipt,
   Heart,
 } from "lucide-react";
 
@@ -43,7 +40,7 @@ export function CartDrawer({
   onClearCart,
 }: Props) {
   const [orderType, setOrderType] = useState<"mesa" | "pickup" | "reserva">("mesa");
-  const [tableNumber, setTableNumber] = useState<string>("Mesa 4");
+  const [tableNumber, setTableNumber] = useState<string>("Mesa en Costa Verde");
   const [tipPercentage, setTipPercentage] = useState<number>(10);
   const [notes, setNotes] = useState<string>("");
 
@@ -59,18 +56,17 @@ export function CartDrawer({
 
   const totalDual = formatDualPrice(totalUSD, bcvRate);
 
-  // Mensaje estructurado para WhatsApp
   const handleCheckoutWhatsApp = () => {
-    let orderDetails = `🍔 *[THE CORNER] NUEVA COMANDA DIGITAL*\n\n`;
-    orderDetails += `*Tipo:* ${
+    let orderDetails = `🍔 *[THE CORNER COSTA VERDE] NUEVA COMANDA DIGITAL*\n\n`;
+    orderDetails += `*Ubicación / Tipo:* ${
       orderType === "mesa"
-        ? `Consumo en el Local (${tableNumber})`
+        ? `Consumo en Mesa (${tableNumber})`
         : orderType === "pickup"
-        ? `Pick-Up / Para Llevar`
-        : `Consumo para Reserva`
+        ? `Para Llevar / Pick-Up`
+        : `Consumo para Reserva Especial`
     }\n\n`;
 
-    orderDetails += `*Ítems Pedidos:*\n`;
+    orderDetails += `*Productos Pedidos:*\n`;
     items.forEach((ci) => {
       const itemSubtotal = ci.item.priceUSD * ci.quantity;
       orderDetails += `• ${ci.quantity}x ${ci.item.name} ($${itemSubtotal.toFixed(2)})\n`;
@@ -83,10 +79,10 @@ export function CartDrawer({
     orderDetails += `*TOTAL FINAL:* ${totalDual.usd} (≈ ${totalDual.ves})\n`;
 
     if (notes.trim()) {
-      orderDetails += `\n*Notas / Preferencias:* ${notes.trim()}\n`;
+      orderDetails += `\n*Notas:* ${notes.trim()}\n`;
     }
 
-    orderDetails += `\n_Comanda generada desde la WebApp oficial de The Corner._`;
+    orderDetails += `\n_The Corner · C.C. Costa Verde Planta Alta._`;
 
     const url = `https://wa.me/${SITE_CONFIG.whatsappNumber}?text=${encodeURIComponent(
       orderDetails
@@ -106,14 +102,14 @@ export function CartDrawer({
           className="fixed inset-0 bg-black/80 backdrop-blur-sm"
         />
 
-        {/* Drawer Panel */}
+        {/* Drawer Panel con física iOS-like */}
         <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="w-screen max-w-md bg-[#0D0D13] border-l border-orange-500/20 shadow-2xl flex flex-col justify-between"
+            transition={{ type: "spring", damping: 28, stiffness: 220 }}
+            className="w-screen max-w-md bg-[#0D0D14] border-l border-orange-500/20 shadow-2xl flex flex-col justify-between"
           >
             {/* Header del Carrito */}
             <div className="p-5 border-b border-white/10 flex items-center justify-between">
@@ -136,14 +132,14 @@ export function CartDrawer({
                   <button
                     onClick={onClearCart}
                     title="Vaciar comanda"
-                    className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-rose-400 hover:bg-zinc-700 transition-all text-xs"
+                    className="p-2 rounded-xl bg-zinc-800 text-zinc-400 hover:text-rose-400 hover:bg-zinc-700 transition-all text-xs"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all"
+                  className="p-2 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -195,11 +191,11 @@ export function CartDrawer({
                     ))}
                   </div>
 
-                  {/* Modificador de Ubicación / Pedido */}
+                  {/* Modificador de Modalidad */}
                   <div className="pt-4 border-t border-white/10 space-y-3">
                     <div>
                       <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block mb-1.5">
-                        Modalidad del Pedido:
+                        Modalidad:
                       </label>
                       <div className="grid grid-cols-3 gap-1.5">
                         {[
@@ -230,13 +226,13 @@ export function CartDrawer({
                     {orderType === "mesa" && (
                       <div>
                         <label className="text-[11px] font-bold text-zinc-400 block mb-1">
-                          Número de Mesa / Zona:
+                          Ubicación de Mesa:
                         </label>
                         <input
                           type="text"
                           value={tableNumber}
                           onChange={(e) => setTableNumber(e.target.value)}
-                          placeholder="Ej. Mesa 4 (Zona Gamer)"
+                          placeholder="Ej. Mesa 4 (C.C. Costa Verde)"
                           className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white focus:outline-none focus:border-orange-500"
                         />
                       </div>
@@ -245,8 +241,8 @@ export function CartDrawer({
                     {/* Selector de Propina */}
                     <div>
                       <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block mb-1.5 flex items-center gap-1">
-                        <Heart className="w-3.5 h-3.5 text-rose-400" />
-                        Propina al Bartender / Game Master:
+                        <Heart className="w-3.5 h-3.5 text-pink-400" />
+                        Propina al Staff:
                       </label>
                       <div className="grid grid-cols-4 gap-1.5">
                         {[0, 10, 15, 20].map((pct) => (
@@ -269,20 +265,19 @@ export function CartDrawer({
                     {/* Notas */}
                     <div>
                       <label className="text-[11px] font-bold text-zinc-400 block mb-1">
-                        Notas para la Cocina / Barra (Opcional):
+                        Notas para la Cocina / Barra:
                       </label>
                       <input
                         type="text"
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Ej. Sin hielo, salsa tártara extra..."
+                        placeholder="Ej. Cervezas vestidas de novia, salsa aparte..."
                         className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white focus:outline-none focus:border-orange-500"
                       />
                     </div>
                   </div>
                 </>
               ) : (
-                /* Empty Cart State */
                 <div className="text-center py-20 space-y-3">
                   <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-600 mx-auto">
                     <ShoppingBag className="w-8 h-8" />
@@ -291,7 +286,7 @@ export function CartDrawer({
                     Tu comanda está vacía
                   </h4>
                   <p className="text-xs text-zinc-500 max-w-xs mx-auto">
-                    Explora nuestra carta de pociones mágicas, cócteles UV, alitas o nachos y agrégalos en 1 clic.
+                    Añade baldes de cerveza a $10, narguiles, perros calientes o hamburguesas en 1 clic.
                   </p>
                 </div>
               )}
@@ -300,7 +295,6 @@ export function CartDrawer({
             {/* Footer / Checkout */}
             {items.length > 0 && (
               <div className="p-5 border-t border-white/10 bg-black/60 space-y-3">
-                {/* Desglose de Totales */}
                 <div className="space-y-1 text-xs">
                   <div className="flex items-center justify-between text-zinc-400">
                     <span>Subtotal:</span>
@@ -327,13 +321,12 @@ export function CartDrawer({
                   </div>
                 </div>
 
-                {/* Botón Enviar Pedido a WhatsApp */}
                 <button
                   onClick={handleCheckoutWhatsApp}
-                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-black font-black text-xs sm:text-sm tracking-wide shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all"
+                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-black font-black text-xs sm:text-sm tracking-wide shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.97] transition-all"
                 >
                   <MessageCircle className="w-5 h-5 fill-black" />
-                  ENVIAR COMANDA A WHATSAPP
+                  ENVIAR PEDIDO A WHATSAPP
                 </button>
               </div>
             )}

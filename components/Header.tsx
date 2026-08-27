@@ -2,87 +2,105 @@
 
 import { useState, useEffect } from "react";
 import { CurrencyMode } from "@/data/currencies";
-import { SITE_CONFIG } from "@/lib/config";
 import {
-  Gamepad2,
-  Sparkles,
+  PartyPopper,
   ShoppingBag,
   Calendar,
   MapPin,
-  ShieldCheck,
   Menu,
   X,
-  Dices,
+  Flame,
+  Gamepad2,
+  TrendingUp,
 } from "lucide-react";
 
 type Props = {
   currency: CurrencyMode;
-  onToggleCurrency: () => void;
-  bcvRate: number;
+  onSelectCurrency: (mode: CurrencyMode) => void;
+  usdRate: number;
+  eurRate: number;
   cartCount: number;
   onOpenCart: () => void;
-  isManagerMode: boolean;
-  onToggleManagerMode: () => void;
   onOpenDiceRoller: () => void;
 };
 
 export function Header({
   currency,
-  onToggleCurrency,
-  bcvRate,
+  onSelectCurrency,
+  usdRate,
+  eurRate,
   cartCount,
   onOpenCart,
-  isManagerMode,
-  onToggleManagerMode,
-  onOpenDiceRoller,
 }: Props) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolled(window.scrollY > 15);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const navLinks = [
-    { label: "Ludoteca 50+", href: "#ludoteca", icon: Gamepad2 },
-    { label: "Pociones & Menú", href: "#menu", icon: Sparkles },
-    { label: "Reservar Mesa", href: "#reservas", icon: Calendar },
-    { label: "Eventos & Torneos", href: "#eventos", icon: Dices },
+    { label: "Paquetes Celebración", href: "#paquetes", icon: PartyPopper },
+    { label: "Promos & Menú", href: "#menu", icon: Flame },
+    { label: "Mario Kart & Juegos", href: "#juegos", icon: Gamepad2 },
+    { label: "Cronograma Semanal", href: "#eventos", icon: Calendar },
     { label: "Ubicación", href: "#ubicacion", icon: MapPin },
   ];
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-200 ${
         isScrolled
-          ? "bg-[#09090D]/90 backdrop-blur-md border-b border-orange-500/20 shadow-lg shadow-black/40 py-2.5"
-          : "bg-gradient-to-b from-[#09090D] via-[#09090D]/80 to-transparent py-4"
+          ? "bg-[#09090E]/95 backdrop-blur-md border-b border-orange-500/20 shadow-xl shadow-black/60 py-2.5"
+          : "bg-gradient-to-b from-[#09090E] via-[#09090E]/80 to-transparent py-3 sm:py-4"
       }`}
     >
+      {/* Ticker Superior de Tasas BCV en Vivo (Dólar & Euro) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-1.5 hidden sm:flex items-center justify-between text-[11px] text-zinc-400">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1 font-bold text-orange-400">
+            <TrendingUp className="w-3 h-3 text-emerald-400" />
+            Tasas Oficiales BCV:
+          </span>
+          <span className="bg-zinc-900/90 px-2 py-0.5 rounded-md border border-zinc-800 font-mono text-zinc-200">
+            💵 $1 = <strong className="text-emerald-400">{usdRate.toFixed(2)}</strong> Bs.
+          </span>
+          <span className="bg-zinc-900/90 px-2 py-0.5 rounded-md border border-zinc-800 font-mono text-zinc-200">
+            💶 €1 = <strong className="text-sky-400">{eurRate.toFixed(2)}</strong> Bs.
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-zinc-400">
+          <span>📍 C.C. Costa Verde (Planta Alta)</span>
+          <span>·</span>
+          <span>Mié a Dom: 6:00 PM a 3:00 AM</span>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
-        {/* Logo & Brand */}
+        {/* Logo Oficial The Corner */}
         <a
           href="#"
-          className="flex items-center gap-2.5 group focus:outline-none focus:ring-2 focus:ring-orange-500 rounded-lg p-1"
+          className="flex items-center gap-2.5 group focus:outline-none rounded-xl p-1"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:scale-105 transition-transform">
-            <Gamepad2 className="w-6 h-6 text-black" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF5500] to-[#E04B00] flex items-center justify-center text-black font-black text-xl shadow-lg shadow-orange-500/30 group-hover:scale-105 transition-transform">
+            +
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-black text-lg sm:text-xl tracking-tight text-white uppercase group-hover:text-orange-400 transition-colors">
-                The Corner
+              <span className="font-black text-lg sm:text-xl tracking-tighter text-white uppercase group-hover:text-orange-400 transition-colors">
+                THE CORNER.
               </span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/20 border border-orange-500/40 text-orange-400">
-                MCBO
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/40 uppercase">
+                Costa Verde
               </span>
             </div>
-            <p className="text-[10px] text-zinc-400 hidden sm:block">
-              Drinks · Board Games & Lounge
+            <p className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase hidden sm:block">
+              DRINKS & ENTERTAINMENT
             </p>
           </div>
         </a>
@@ -95,57 +113,58 @@ export function Header({
               <a
                 key={link.href}
                 href={link.href}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:text-orange-400 hover:bg-orange-500/10 rounded-xl transition-all"
               >
-                <Icon className="w-3.5 h-3.5 text-orange-400/80" />
+                <Icon className="w-3.5 h-3.5 text-orange-400/90" />
                 {link.label}
               </a>
             );
           })}
         </nav>
 
-        {/* Actions (Dice Roller, Currency, Cart, Manager Switch, Mobile Menu) */}
+        {/* Actions (Triple Currency Selector, Cart, Mobile Menu) */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Botón Tira el Dado */}
-          <button
-            onClick={onOpenDiceRoller}
-            title="¿No sabes qué jugar? Tira el Dado D20"
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg transition-all hover:scale-105"
-          >
-            <Dices className="w-4 h-4 text-amber-400 animate-spin-slow" />
-            <span className="hidden md:inline">Tirar D20</span>
-          </button>
-
-          {/* Switch Moneda USD / VES */}
-          <button
-            onClick={onToggleCurrency}
-            title={`Cambiar a ${currency === "USD" ? "Bolívares (VES)" : "Dólares (USD)"}`}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-lg border border-zinc-700 bg-zinc-900/80 hover:border-orange-500/50 hover:bg-zinc-800 transition-all text-zinc-200"
-          >
-            <span
-              className={`px-1.5 py-0.5 rounded text-[10px] ${
+          {/* Selector de Moneda: USD ($), EUR (€), VES (Bs.) */}
+          <div className="flex items-center p-0.5 rounded-xl border border-zinc-800 bg-zinc-900/90 text-xs font-bold">
+            <button
+              onClick={() => onSelectCurrency("USD")}
+              title={`Ver precios en Dólares ($)`}
+              className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
                 currency === "USD"
-                  ? "bg-emerald-500 text-black font-extrabold"
-                  : "text-zinc-400"
+                  ? "bg-emerald-500 text-black shadow-sm"
+                  : "text-zinc-400 hover:text-white"
               }`}
             >
               $ USD
-            </span>
-            <span
-              className={`px-1.5 py-0.5 rounded text-[10px] ${
-                currency === "VES"
-                  ? "bg-amber-500 text-black font-extrabold"
-                  : "text-zinc-400"
+            </button>
+            <button
+              onClick={() => onSelectCurrency("EUR")}
+              title={`Ver precios en Euros (€)`}
+              className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
+                currency === "EUR"
+                  ? "bg-sky-500 text-black shadow-sm"
+                  : "text-zinc-400 hover:text-white"
               }`}
             >
-              Bs. VES
-            </span>
-          </button>
+              € EUR
+            </button>
+            <button
+              onClick={() => onSelectCurrency("VES")}
+              title={`Ver precios en Bolívares (Bs.)`}
+              className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
+                currency === "VES"
+                  ? "bg-amber-500 text-black shadow-sm"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Bs.
+            </button>
+          </div>
 
           {/* Botón de Comanda / Carrito */}
           <button
             onClick={onOpenCart}
-            className="relative flex items-center justify-center p-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-black font-bold shadow-lg shadow-orange-500/25 transition-all hover:scale-105 focus:outline-none"
+            className="relative flex items-center justify-center p-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-black font-black shadow-lg shadow-orange-500/30 transition-all hover:scale-105 active:scale-95"
             aria-label="Abrir comanda de pedidos"
           >
             <ShoppingBag className="w-4 h-4 text-black" />
@@ -156,26 +175,10 @@ export function Header({
             )}
           </button>
 
-          {/* Switch Modo Gerente / Admin */}
-          <button
-            onClick={onToggleManagerMode}
-            title={isManagerMode ? "Volver a vista Cliente" : "Modo Gerente / Dashboard"}
-            className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${
-              isManagerMode
-                ? "bg-red-500/20 border-red-500 text-red-300 hover:bg-red-500/30"
-                : "bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500"
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">
-              {isManagerMode ? "Vista Cliente" : "Gerente"}
-            </span>
-          </button>
-
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 focus:outline-none"
+            className="lg:hidden p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800"
             aria-label="Abrir menú"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -183,9 +186,19 @@ export function Header({
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {/* Mobile Dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden mt-2 px-4 py-3 bg-[#0e0e14] border-b border-orange-500/20 space-y-2 animate-fadeIn">
+        <div className="lg:hidden mt-2 px-4 py-3 bg-[#0d0d14] border-b border-orange-500/20 space-y-2">
+          {/* Mobile Rate Ticker */}
+          <div className="p-2.5 rounded-xl bg-black/60 border border-white/5 flex items-center justify-between text-xs">
+            <span className="text-zinc-400 text-[11px]">BCV Hoy:</span>
+            <div className="flex gap-2">
+              <span className="font-mono text-emerald-400 font-bold">$ {usdRate.toFixed(2)}</span>
+              <span className="text-zinc-600">|</span>
+              <span className="font-mono text-sky-400 font-bold">€ {eurRate.toFixed(2)}</span>
+            </div>
+          </div>
+
           {navLinks.map((link) => {
             const Icon = link.icon;
             return (
@@ -193,35 +206,13 @@ export function Header({
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-zinc-300 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg"
+                className="flex items-center gap-2.5 px-3 py-2 text-sm font-bold text-zinc-300 hover:text-orange-400 hover:bg-orange-500/10 rounded-xl"
               >
                 <Icon className="w-4 h-4 text-orange-400" />
                 {link.label}
               </a>
             );
           })}
-          <div className="pt-2 border-t border-zinc-800 flex items-center justify-between">
-            <button
-              onClick={() => {
-                onOpenDiceRoller();
-                setMobileMenuOpen(false);
-              }}
-              className="flex items-center gap-2 text-xs font-bold text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-lg"
-            >
-              <Dices className="w-4 h-4" />
-              Tirar Dado D20
-            </button>
-            <button
-              onClick={() => {
-                onToggleManagerMode();
-                setMobileMenuOpen(false);
-              }}
-              className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              {isManagerMode ? "Modo Cliente" : "Modo Gerente"}
-            </button>
-          </div>
         </div>
       )}
     </header>
