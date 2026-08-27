@@ -46,6 +46,8 @@ import {
   Filter,
 } from "lucide-react";
 
+import { TableQrGenerator } from "@/components/TableQrGenerator";
+
 type Props = {
   onExitManagerMode: () => void;
   bcvRate: number;
@@ -63,7 +65,7 @@ type StaffUser = {
 
 export function ManagerDashboard({ onExitManagerMode, bcvRate }: Props) {
   const [activeTab, setActiveTab] = useState<
-    "payments" | "overview" | "menu" | "ludoteca" | "users" | "whatsapp"
+    "payments" | "overview" | "stickers" | "menu" | "ludoteca" | "users" | "whatsapp"
   >("payments");
 
   const [bookings, setBookings] = useState<LiveBooking[]>(INITIAL_LIVE_BOOKINGS);
@@ -449,33 +451,59 @@ export function ManagerDashboard({ onExitManagerMode, bcvRate }: Props) {
           </div>
         )}
 
-        {/* Navigation Tabs (Sin Tasa BCV ni Ajustes) */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-white/10">
-          {[
-            { id: "payments", label: "💰 Gestión de Pagos", badge: pendingPaymentsCount },
-            { id: "overview", label: "🎟️ Mesas & Reservas" },
-            { id: "menu", label: "🍔 Menú & Promos" },
-            { id: "ludoteca", label: "🎲 Ludoteca & Juegos" },
-            { id: "users", label: "👥 Usuarios & Staff" },
-            { id: "whatsapp", label: "📱 Automatizaciones WhatsApp" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider shrink-0 transition-all ${
-                activeTab === tab.id
-                  ? "bg-gradient-to-r from-orange-500 to-amber-500 text-black shadow-lg shadow-orange-500/20"
-                  : "bg-zinc-900/80 text-zinc-400 hover:text-white hover:bg-zinc-800"
-              }`}
+        {/* Quick Launch Tools & Navigation Tabs */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {[
+              { id: "payments", label: "💰 Gestión de Pagos", badge: pendingPaymentsCount },
+              { id: "overview", label: "🎟️ Mesas & Reservas" },
+              { id: "stickers", label: "🏷️ Stickers QR Mesas" },
+              { id: "menu", label: "🍔 Menú & Promos" },
+              { id: "ludoteca", label: "🎲 Ludoteca & Juegos" },
+              { id: "users", label: "👥 Usuarios & Staff" },
+              { id: "whatsapp", label: "📱 Automatizaciones WhatsApp" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-black uppercase tracking-wider shrink-0 transition-all ${
+                  activeTab === tab.id
+                    ? "bg-gradient-to-r from-orange-500 to-amber-500 text-black shadow-lg shadow-orange-500/20"
+                    : "bg-zinc-900/80 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                }`}
+              >
+                <span>{tab.label}</span>
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Accesos Directos a Herramientas en Vivo */}
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href="/barra"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600 text-purple-200 hover:text-white border border-purple-500/40 text-xs font-black flex items-center gap-1.5 transition-all"
             >
-              <span>{tab.label}</span>
-              {tab.badge !== undefined && tab.badge > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          ))}
+              <span>📺 Abrir KDS Barra</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+
+            <a
+              href="/escanear"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-xl bg-orange-500/30 hover:bg-orange-500 text-orange-200 hover:text-black border border-orange-500/40 text-xs font-black flex items-center gap-1.5 transition-all"
+            >
+              <span>📷 Escáner Puerta</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
 
         {/* =========================================================================
@@ -819,6 +847,15 @@ export function ManagerDashboard({ onExitManagerMode, bcvRate }: Props) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB: GENERADOR DE STICKERS QR DE MESAS
+           ========================================================================= */}
+        {activeTab === "stickers" && (
+          <div className="p-4 sm:p-6 rounded-3xl bg-zinc-900/60 border border-white/5">
+            <TableQrGenerator />
           </div>
         )}
 
