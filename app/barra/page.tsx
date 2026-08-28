@@ -19,8 +19,12 @@ import {
   Zap,
   Check,
   AlertTriangle,
+  CreditCard,
+  Trash2,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
+import confetti from "canvas-confetti";
 
 export type LiveKdsOrder = {
   id: string;
@@ -40,9 +44,12 @@ export type LiveKdsOrder = {
 export type LiveServiceAlert = {
   id: string;
   table: string;
-  type: "mesonero" | "juego";
+  type: "mesonero" | "juego" | "cuenta";
   reason?: string;
   gameName?: string;
+  totalUSD?: number;
+  totalVES?: number;
+  tipUSD?: number;
   time: string;
 };
 
@@ -73,34 +80,24 @@ export default function BarKDSPage() {
       status: "preparando",
       createdAt: "Hace 6 min",
     },
-    {
-      id: "ORD-8399",
-      table: "Zona VIP",
-      items: [
-        { name: "Combo 3 Smash Burgers + Papas", quantity: 1, priceUSD: 15 },
-        { name: "Ronda Shots Power Rangers (5)", quantity: 1, priceUSD: 8 },
-      ],
-      subtotalUSD: 23,
-      subtotalVES: 1766.4,
-      status: "entregado",
-      createdAt: "Hace 15 min",
-    },
   ]);
 
   const [alerts, setAlerts] = useState<LiveServiceAlert[]>([
+    {
+      id: "BILL-1",
+      table: "Mesa 4",
+      type: "cuenta",
+      totalUSD: 35,
+      totalVES: 2688,
+      tipUSD: 3.5,
+      time: "Hace 1 min",
+    },
     {
       id: "CALL-1",
       table: "Mesa 5",
       type: "mesonero",
       reason: "Más Hielo / Vasos",
-      time: "Hace 1 min",
-    },
-    {
-      id: "GAME-1",
-      table: "Mesa 3",
-      type: "juego",
-      gameName: "Jenga Madera Gigante",
-      time: "Hace 4 min",
+      time: "Hace 3 min",
     },
   ]);
 
@@ -108,7 +105,7 @@ export default function BarKDSPage() {
   const [activeTab, setActiveTab] = useState<"comandas" | "alertas">("comandas");
 
   // Síntesis de Sonido Campana de Barra (Web Audio API)
-  const playServiceChime = () => {
+  const playServiceChime = (freq1 = 980, freq2 = 1318) => {
     if (!soundEnabled || typeof window === "undefined") return;
     try {
       const ctx = new (window.AudioContext ||
@@ -119,10 +116,9 @@ export default function BarKDSPage() {
       osc.connect(gain);
       gain.connect(ctx.destination);
 
-      // Tono campana doble ding-dong (980Hz -> 1318Hz)
       osc.type = "triangle";
-      osc.frequency.setValueAtTime(980, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1318, ctx.currentTime + 0.15);
+      osc.frequency.setValueAtTime(freq1, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(freq2, ctx.currentTime + 0.15);
 
       gain.gain.setValueAtTime(0.4, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
@@ -144,7 +140,6 @@ export default function BarKDSPage() {
             const parsed = JSON.parse(rawOrders);
             if (Array.isArray(parsed) && parsed.length > 0) {
               setOrders((prev) => {
-                // Combinar sin duplicar
                 const ids = new Set(parsed.map((p: any) => p.id));
                 const filteredPrev = prev.filter((p) => !ids.has(p.id));
                 return [...parsed, ...filteredPrev];
@@ -181,6 +176,39 @@ export default function BarKDSPage() {
     playServiceChime();
   };
 
+  // Liberar mesa y reiniciar sesión para el siguiente cliente
+  const handleReleaseTable = (tableName: string, alertId?: string) => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(`corner_table_status_${tableName}`, "liberada");
+        localStorage.removeItem(`corner_orders_${tableName}`);
+
+        // Limpiar órdenes de esa mesa en el KDS
+        const updatedOrders = orders.filter((o) => o.table !== tableName);
+        setOrders(updatedOrders);
+        localStorage.setItem("corner_live_kds_orders", JSON.stringify(updatedOrders));
+
+        // Limpiar la alerta si existe
+        if (alertId) {
+          const updatedAlerts = alerts.filter((a) => a.id !== alertId);
+          setAlerts(updatedAlerts);
+          localStorage.setItem("corner_live_alerts", JSON.stringify(updatedAlerts));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.6 },
+      colors: ["#10b981", "#f59e0b", "#ff5500"],
+    });
+
+    playServiceChime(1200, 1600);
+  };
+
   const handleDismissAlert = (alertId: string) => {
     setAlerts((prev) => {
       const filtered = prev.filter((a) => a.id !== alertId);
@@ -194,6 +222,7 @@ export default function BarKDSPage() {
   const pendingOrders = orders.filter((o) => o.status === "pendiente");
   const preparingOrders = orders.filter((o) => o.status === "preparando");
   const deliveredOrders = orders.filter((o) => o.status === "entregado");
+  const billAlerts = alerts.filter((a) => a.type === "cuenta");
 
   return (
     <div className="min-h-screen bg-[#07070B] text-zinc-100 p-4 sm:p-6 space-y-6">
@@ -202,7 +231,7 @@ export default function BarKDSPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white"
+            className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-transform active:scale-95"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
@@ -246,9 +275,9 @@ export default function BarKDSPage() {
                   : "text-zinc-400 hover:text-white"
               }`}
             >
-              Llamadas & Juegos
+              Llamadas & Cuentas
               {alerts.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
                   {alerts.length}
                 </span>
               )}
@@ -256,6 +285,57 @@ export default function BarKDSPage() {
           </div>
         </div>
       </header>
+
+      {/* BANNER DORADO SI HAY CUENTAS PENDIENTES DE COBRO */}
+      {billAlerts.length > 0 && (
+        <div className="p-4 rounded-3xl bg-gradient-to-r from-emerald-950/80 via-zinc-950 to-amber-950/80 border-2 border-emerald-500/50 shadow-2xl space-y-3 animate-in slide-in-from-top duration-300">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              <h3 className="font-black text-sm text-emerald-400 uppercase tracking-wide">
+                Solicitudes de Cuenta y Cierre en Barra ({billAlerts.length})
+              </h3>
+            </div>
+            <span className="text-[11px] font-bold text-zinc-400">Atención inmediata</span>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            {billAlerts.map((ba) => (
+              <div
+                key={ba.id}
+                className="p-3.5 rounded-2xl bg-black/80 border border-emerald-500/40 flex items-center justify-between gap-3 shadow-xl"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-sm text-black px-2.5 py-0.5 rounded-lg bg-emerald-400">
+                      {ba.table}
+                    </span>
+                    <span className="text-[10px] font-mono text-zinc-400">{ba.time}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="text-sm font-black text-white block">
+                      Total: ${ba.totalUSD?.toFixed(2)} USD
+                    </span>
+                    <span className="text-[11px] font-mono text-emerald-400">
+                      ≈ {ba.totalVES?.toFixed(2)} Bs.
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleReleaseTable(ba.table, ba.id)}
+                  className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-black font-black text-xs uppercase shadow-lg shadow-emerald-500/20 active:scale-95 transition-transform shrink-0"
+                >
+                  ✓ Cobrado & Liberar
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* PESTAÑA 1: TABLERO KANBAN DE COMANDAS */}
       {activeTab === "comandas" && (
@@ -301,7 +381,7 @@ export default function BarKDSPage() {
 
                   <button
                     onClick={() => handleUpdateStatus(order.id, "preparando")}
-                    className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-black text-xs uppercase transition-all"
+                    className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-black text-xs uppercase transition-all active:scale-95"
                   >
                     Empezar a Preparar ➔
                   </button>
@@ -356,7 +436,7 @@ export default function BarKDSPage() {
 
                   <button
                     onClick={() => handleUpdateStatus(order.id, "entregado")}
-                    className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-black text-xs uppercase transition-all"
+                    className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-black text-xs uppercase transition-all active:scale-95"
                   >
                     ✓ Listo para Llevar a Mesa
                   </button>
@@ -370,7 +450,7 @@ export default function BarKDSPage() {
             </div>
           </div>
 
-          {/* COLUMNA 3: ENTREGADOS / COMPLETADOS */}
+          {/* COLUMNA 3: ENTREGADOS / LIBERACIÓN DE MESAS */}
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
               <span className="font-black text-xs uppercase flex items-center gap-1.5">
@@ -383,10 +463,10 @@ export default function BarKDSPage() {
               {deliveredOrders.map((order) => (
                 <div
                   key={order.id}
-                  className="p-3.5 rounded-2xl bg-zinc-900/60 border border-white/5 space-y-2 opacity-80"
+                  className="p-3.5 rounded-2xl bg-zinc-900/80 border border-white/5 space-y-2.5 shadow-md"
                 >
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-zinc-300">{order.table}</span>
+                    <span className="font-black text-sm text-white">{order.table}</span>
                     <span className="font-mono text-[10px] text-zinc-500">{order.createdAt}</span>
                   </div>
                   <div className="text-[11px] text-zinc-400 space-y-0.5">
@@ -396,14 +476,27 @@ export default function BarKDSPage() {
                       </p>
                     ))}
                   </div>
+
+                  <button
+                    onClick={() => handleReleaseTable(order.table)}
+                    className="w-full py-1.5 rounded-xl bg-zinc-800 hover:bg-rose-500 hover:text-black text-zinc-400 text-xs font-bold transition-all flex items-center justify-center gap-1 active:scale-95"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Liberar & Resetear {order.table}</span>
+                  </button>
                 </div>
               ))}
+              {deliveredOrders.length === 0 && (
+                <p className="text-xs text-zinc-500 text-center py-6">
+                  No hay comandas entregadas activas.
+                </p>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* PESTAÑA 2: ALERTAS DE MESONERO Y PETICIONES DE JUEGOS */}
+      {/* PESTAÑA 2: ALERTAS DE MESONERO, JUEGOS Y CUENTAS */}
       {activeTab === "alertas" && (
         <div className="max-w-3xl mx-auto space-y-4">
           <h2 className="text-base font-black uppercase text-white">
@@ -414,17 +507,29 @@ export default function BarKDSPage() {
             {alerts.map((alert) => (
               <div
                 key={alert.id}
-                className="p-4 rounded-3xl bg-zinc-900 border border-amber-500/40 flex items-center justify-between gap-4 shadow-xl"
+                className={`p-4 rounded-3xl bg-zinc-900 border flex items-center justify-between gap-4 shadow-xl ${
+                  alert.type === "cuenta"
+                    ? "border-emerald-500/60 bg-emerald-950/20"
+                    : "border-amber-500/40"
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                      alert.type === "mesonero"
+                      alert.type === "cuenta"
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : alert.type === "mesonero"
                         ? "bg-amber-500/20 text-amber-400"
                         : "bg-purple-500/20 text-purple-400"
                     }`}
                   >
-                    {alert.type === "mesonero" ? <Bell className="w-5 h-5" /> : <Dices className="w-5 h-5" />}
+                    {alert.type === "cuenta" ? (
+                      <CreditCard className="w-5 h-5" />
+                    ) : alert.type === "mesonero" ? (
+                      <Bell className="w-5 h-5" />
+                    ) : (
+                      <Dices className="w-5 h-5" />
+                    )}
                   </div>
 
                   <div>
@@ -434,20 +539,33 @@ export default function BarKDSPage() {
                       </span>
                       <span className="text-[10px] font-mono text-zinc-500">{alert.time}</span>
                     </div>
-                    <p className="text-xs text-zinc-200 mt-1">
-                      {alert.type === "mesonero"
+                    <p className="text-xs text-zinc-200 mt-1 font-bold">
+                      {alert.type === "cuenta"
+                        ? `Solicitud de Cuenta: $${alert.totalUSD?.toFixed(2)} USD (≈ ${alert.totalVES?.toFixed(2)} Bs.)`
+                        : alert.type === "mesonero"
                         ? `Solicitud: ${alert.reason || "Atención en mesa"}`
                         : `Juego pedido: ${alert.gameName}`}
                     </p>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => handleDismissAlert(alert.id)}
-                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-emerald-500 hover:text-black font-black text-xs transition-all shrink-0"
-                >
-                  ✓ Atendido
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  {alert.type === "cuenta" ? (
+                    <button
+                      onClick={() => handleReleaseTable(alert.table, alert.id)}
+                      className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-black text-xs transition-all active:scale-95"
+                    >
+                      ✓ Cobrado & Liberar
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleDismissAlert(alert.id)}
+                      className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-emerald-500 hover:text-black font-black text-xs transition-all active:scale-95"
+                    >
+                      ✓ Atendido
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
 

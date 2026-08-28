@@ -70,6 +70,8 @@ export default function TableOrderPage() {
 
   // Historial de pedidos activos de la mesa
   const [activeOrders, setActiveOrders] = useState<PlacedOrder[]>([]);
+  const [isTableClosed, setIsTableClosed] = useState(false);
+  const [billRequestSent, setBillRequestSent] = useState(false);
 
   // Modales interactivos
   const [isCallWaiterOpen, setIsCallWaiterOpen] = useState(false);
@@ -112,17 +114,28 @@ export default function TableOrderPage() {
       if (rate) setBcvRate(rate);
     });
 
-    // Cargar órdenes previas de la mesa desde localStorage
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem(`corner_orders_${displayTable}`);
-        if (saved) {
-          setActiveOrders(JSON.parse(saved));
+    const checkTableSession = () => {
+      if (typeof window !== "undefined") {
+        try {
+          const status = localStorage.getItem(`corner_table_status_${displayTable}`);
+          if (status === "liberada" || status === "closed") {
+            setIsTableClosed(true);
+          } else {
+            setIsTableClosed(false);
+            const saved = localStorage.getItem(`corner_orders_${displayTable}`);
+            if (saved) {
+              setActiveOrders(JSON.parse(saved));
+            }
+          }
+        } catch (e) {
+          console.error(e);
         }
-      } catch (e) {
-        console.error(e);
       }
-    }
+    };
+
+    checkTableSession();
+    const interval = setInterval(checkTableSession, 2500);
+    return () => clearInterval(interval);
   }, [displayTable]);
 
   const categories = [
@@ -325,12 +338,99 @@ export default function TableOrderPage() {
     }, 1800);
   };
 
+  // Solicitar cobro formal a la barra
+  const handleRequestBill = () => {
+    const billAlert = {
+      id: `BILL-${Date.now()}`,
+      table: displayTable,
+      type: "cuenta",
+      totalUSD: finalBillUSD,
+      totalVES: finalBillUSD * bcvRate,
+      tipUSD: tipAmountUSD,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+
+    if (typeof window !== "undefined") {
+      try {
+        const currentAlerts = JSON.parse(localStorage.getItem("corner_live_alerts") || "[]");
+        localStorage.setItem("corner_live_alerts", JSON.stringify([billAlert, ...currentAlerts]));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    playTactileBeep(1200, 0.15);
+    setBillRequestSent(true);
+    setTimeout(() => {
+      setBillRequestSent(false);
+      setIsBillModalOpen(false);
+    }, 2500);
+  };
+
+  // Iniciar nueva sesión limpia en la mesa para el próximo cliente
+  const handleStartNewSession = () => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem(`corner_orders_${displayTable}`);
+        localStorage.setItem(`corner_table_status_${displayTable}`, "activa");
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    setOrderItems([]);
+    setActiveOrders([]);
+    setIsTableClosed(false);
+    playTactileBeep(1000, 0.1);
+  };
+
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
     playTactileBeep(1200, 0.08);
     setTimeout(() => setCopiedField(null), 2000);
   };
+
+  // PANTALLA DE CIERRE DE SESIÓN: PARA EL SIGUIENTE CLIENTE
+  if (isTableClosed) {
+    return (
+      <div className="min-h-screen bg-[#07070B] text-zinc-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full p-6 sm:p-8 rounded-3xl bg-zinc-950 border-2 border-orange-500/40 shadow-2xl text-center space-y-5 animate-in zoom-in-95 duration-200">
+          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-black mx-auto shadow-lg shadow-orange-500/30">
+            <CheckCircle2 className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-1.5">
+            <span className="px-3 py-1 rounded-full bg-orange-500/20 text-orange-400 text-xs font-black uppercase tracking-wider border border-orange-500/30">
+              {displayTable} Liberada
+            </span>
+            <h1 className="text-2xl font-black text-white uppercase tracking-tight pt-1">
+              ¡Cuenta Cobrada & Cerrada!
+            </h1>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Muchas gracias por visitarnos en <strong>The Corner</strong>. Esperamos que hayas disfrutado de tus bebidas, comida y juegos. 🍻
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-zinc-900/90 border border-white/5 space-y-1 text-left text-xs">
+            <p className="font-bold text-zinc-300 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>Mesa lista para el próximo grupo de clientes.</span>
+            </p>
+            <p className="text-zinc-500 text-[11px]">
+              La sesión previa ha sido finalizada y archivada por el staff.
+            </p>
+          </div>
+
+          <button
+            onClick={handleStartNewSession}
+            className="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 text-black font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-orange-500/30 active:scale-[0.98] transition-transform"
+          >
+            <span>🪑 Iniciar Nueva Sesión en {displayTable}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#07070B] text-zinc-100 pb-32 selection:bg-orange-500 selection:text-black">
@@ -980,9 +1080,28 @@ export default function TableOrderPage() {
               </button>
             </div>
 
+            {/* Botón Principal: Solicitar Cobro a la Barra / Mesonero */}
+            <button
+              onClick={handleRequestBill}
+              disabled={billRequestSent}
+              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-black font-black text-xs sm:text-sm uppercase tracking-wide flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 active:scale-[0.98] transition-transform"
+            >
+              {billRequestSent ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-black" />
+                  <span>¡Solicitud Enviada a Barra!</span>
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4" />
+                  <span>Solicitar Cobro en Barra / Mesonero</span>
+                </>
+              )}
+            </button>
+
             <button
               onClick={() => setIsBillModalOpen(false)}
-              className="w-full py-2.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-bold text-xs"
+              className="w-full py-2.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-bold text-xs active:scale-95 transition-transform"
             >
               Cerrar
             </button>
